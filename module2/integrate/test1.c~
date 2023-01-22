@@ -1,0 +1,45 @@
+/* test1.c --- 
+ * 
+ * 
+ * Author: Yenkai Huang
+ * Created: Mon Jan 16 16:12:26 2023 (-0500)
+ * Version: 1.0
+ * 
+ * Description: 
+ * 
+ */
+
+# include <stdio.h>                                                                       
+# include <stdlib.h>                                                                      
+# include <math.h>                                                                        
+# include <stdint.h>                                                                      
+# include <string.h> 
+# include "integrate.h"
+
+double f(double x){                                                                           
+  double y;                                                                                   
+  y=2*(x*x)+9*x+4;                                                                         
+  return y;                                                                                   
+} 
+
+int main(void){
+	printf("start f\n");
+	double a, b, p, *rp;
+	printf("before 32\n");
+	uint32_t *sp;
+	printf("before *fn\n");
+	double(*fn)(double x);
+	printf("before a\n");
+	a = 1;
+	b = 3;
+	p = 0.0001;
+	printf("before ptr\n");
+	rp = 0;
+	//*sp = 1;
+	printf("before f\n");
+	//fn = f;
+	//printf("before intergrate /n");
+	//integrate(fn, a, b, p, rp, sp);
+		
+	return 0;
+}

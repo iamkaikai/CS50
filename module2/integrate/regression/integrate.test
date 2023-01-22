@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo -e "\n"
+find . -type f -name "test*" ! -name "*.*" -exec runtest.sh {} \;
+echo -e "\n"
