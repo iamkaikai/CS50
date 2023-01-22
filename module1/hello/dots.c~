@@ -1,0 +1,26 @@
+/* dots.c --- 
+ * 
+ * 
+ * Author: Yenkai Huang
+ * Created: Sat Jan 14 16:16:49 2023 (-0500)
+ * Version: 1.0
+ * 
+ * Description: 
+ * 
+ */
+
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[]){
+
+	if(argc != 3){
+		printf("usage: dots n t \n");
+		exit(EXIT_FAILURE);
+	}
+
+	printf("args: %s %s %s \n", argv[0],argv[1],argv[2]);
+	exit(EXIT_SUCCESS);
+
+}

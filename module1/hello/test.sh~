@@ -1,0 +1,7 @@
+output=$(find . -name "*.c")
+
+if [ -z "$output" ]; then
+  echo "empty"
+else
+  echo "$output"
+fi
