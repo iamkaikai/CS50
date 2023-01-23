@@ -1,2 +1,2 @@
-# CS50
-my assignment for cs50 at Dartmouth
+# Dartmouth CS50 - gruop project
+Team: YENKAI HUANG, HONGKE (LUIS) LU, ERIN
