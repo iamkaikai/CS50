@@ -1,5 +1,0 @@
-#!/bin/bash
-
-
-#find . -name "test*" ! -name "*." -type f -exec {} \;
-find . -type f -name "test*" ! -name "*.*"  -exec {}\;
