@@ -1,14 +1,14 @@
-CFLAGS=–Wall –pedantic –std=c11 –I. -g
+CFLAGS=-Wall -pedantic -std=c11 -I. -g
 
-all: 				test
+all: 				test1
 
 list.o: 		list.c list.h
 						gcc $(CFLAGS) -c list.c
 
-test.o: 		test.c list.h
-						gcc $(CFLAGS) -c test.c
+test1.o: 		test1.c list.h
+						gcc $(CFLAGS) -c test1.c
 
-test:				test.o list.o
-						gcc $(CFLAGS) test.o list.o -o test
+test1:				test1.o list.o
+						gcc $(CFLAGS) test1.o list.o -o test1
 c:
-						rm -f *.o test
+						rm -f *.o test1
