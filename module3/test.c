@@ -14,13 +14,6 @@
 # include <string.h>
 # include "list.h"
 
-int main(void){
-	
-	car_t *car1 = make_car("ABC1234", 3000.0, 2003);
-  free(car1);
-	//exit(EXIT_SUCCESS);
-}
-
 
 car_t *make_car(char *plateP, double price, int year){
 
@@ -38,3 +31,13 @@ car_t *make_car(char *plateP, double price, int year){
 	
 	return car;
 }
+
+
+int main(void){
+	
+	car_t *car1 = make_car("ABC1234", 3000.0, 2003);
+  free(car1);
+	//exit(EXIT_SUCCESS);
+}
+
+
