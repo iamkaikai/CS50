@@ -1,2 +1,0 @@
-CS50/ENG50 WI23 group project in Module 3
-Team: YENKAI HUANG, HONGKE (LUIS) LU, ERIN
