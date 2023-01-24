@@ -1,4 +1,5 @@
-CFLAGS=–Wall –pedantic –std=c11 –I. -g
+CFLAGS=-Wall -pedantic -std=c11 -I. -g
+
 
 all: 				test
 
