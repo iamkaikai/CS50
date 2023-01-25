@@ -77,4 +77,41 @@ car_t *lget(){
   }
 }
 
+/* apply a function to every car in the list */                                 
+void lapply(void (*fn)(car_t *cp)){
+	car_t *p;
+	for(p=front; p!=NULL; p=p->next){
+		fn(p);
+    }
+}
 
+
+/* remove(): find, remove, and return any car with                   
+ * the designated plate; return NULL if not present
+ */                                                                   
+car_t *lremove(char *platep){
+	car_t *p,*f;
+	//if the list is not empty
+	if (front != NULL){
+		//if the first car need to be removed
+		if (strcmp(front->plate,platep)==0){
+			p=front;
+ 			front=front->next;
+			return p;
+		}
+		
+		//if the middle or the last car need to be removed
+		for(p=front->next; p!=NULL; p=p->next){
+				if(strcmp(p->plate,platep)==0){
+				f->next = p->next;
+				return p;                                           
+			}                                                        
+			f=p;
+		}
+		return NULL;
+  }
+	//if the list is empty
+	else{
+		return NULL;
+	}
+}
