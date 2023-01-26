@@ -54,6 +54,7 @@ int main(void){
 	else {
 		printf("NULL");
 	}
+	
 	lapply(&printCar);
 	printf("Test for get\n");
 	lget();

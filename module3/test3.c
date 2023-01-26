@@ -62,7 +62,7 @@ int main(void){
 	}
 	lapply(&printCar);
 	printf("Test for get\n");
-	lget();
+	printCar(lget());
 	lapply(&printCar);
 	free(car1);
   free(car2);

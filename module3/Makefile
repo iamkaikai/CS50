@@ -24,4 +24,4 @@ test3:			test3.o list.o
 						gcc $(CFLAGS) test3.o list.o -o test3
 
 c:
-						rm -f *.o test1
+						rm -f *.o test1 test2 test3
