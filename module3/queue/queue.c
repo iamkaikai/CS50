@@ -44,7 +44,22 @@ queue_t* qopen(void){
 }
 
 /* deallocate a queue, frees everything in it */
-void qclose(queue_t *qp);
+void qclose(queue_t *qp){
+    my_queue *nqp;
+    nqp = ((my_queue*) qp);
+    printf("before front = %p\n", (void *)nqp->front);
+    printf("before back = %p\n", (void *)nqp->back);
+    qnode_t *temp;
+    while(nqp ->front != NULL){
+        temp =nqp -> front;
+        nqp -> front = nqp -> front -> next;
+        free(temp);
+    }
+    nqp -> back = NULL;
+    printf("front = %p\n", (void *)nqp->front);
+    printf("back = %p\n", (void *)nqp->back);
+    free(nqp);
+}
 
 int32_t qput(queue_t *qp, void *elementp){
 /* put element at the end of the queue
@@ -82,14 +97,12 @@ returns 0 is successful; nonzero otherwise */
 void qapply(queue_t *qp, void (*fn)(void* elementp)){
 
 	my_queue *nqp = (my_queue*)qp;
-	if((nqp->front == NULL) || (nqp->back == NULL)){
-			printf("Error: the queue is either empty or something wrong!!\n");
-			exit(EXIT_FAILURE);
+	if((nqp->front == NULL) && (nqp->back == NULL)){
+			printf("The queue is empty. Nothing to apply!!\n");
 	}else{
 		//if there's only one object in the queue
 		if(nqp->front->next == NULL){
 			fn(nqp->front->element);
-
 		//if there are more than one objects in the queue
 		}else{
 			qnode_t *qcurrent = nqp->front;
@@ -98,7 +111,6 @@ void qapply(queue_t *qp, void (*fn)(void* elementp)){
 				fn(qcurrent->element);
 				qcurrent = qnext;
 				qnext = qcurrent->next;
-
 				//execute the back object in the queue
 				if(qnext == NULL){
 					fn(qcurrent->element);
@@ -106,4 +118,52 @@ void qapply(queue_t *qp, void (*fn)(void* elementp)){
 			}
 		}		
 	}
+}
+
+
+/* concatenatenates elements of q2 into q1                              
+ * q2 is dealocated, closed, and unusable upon completion               
+ */                                                                     
+void qconcat(queue_t *q1p, queue_t *q2p){
+
+	//check whether queue1 and queue are not empty
+	my_queue *nq1p = (my_queue*)q1p;
+	my_queue *nq2p = (my_queue*)q2p;
+			
+	//if both queue are empty
+	if(nq1p->front == NULL && \
+		 nq1p->back == NULL && \
+		 nq2p->front == NULL && \
+		 nq2p->back == NULL){
+		
+		printf("both queue are empty. close queue2. keep queue1!\n");
+	
+	//if queue1 is empty, put queue2 in front
+	}else if(nq1p->front == NULL && \
+					 nq1p->back == NULL && \
+					 nq2p->front != NULL && \
+					 nq2p->back != NULL){
+			
+		nq1p->front = nq2p->front;
+		nq2p->back = nq2p->back;
+	
+	//if queue1 is not empty, put queue2 in back
+	}else if(nq1p->front != NULL && \
+					 nq1p->back != NULL && \
+					 nq2p->front != NULL && \
+					 nq2p->back != NULL){
+
+		nq1p->back->next = nq2p->front;
+		nq1p->back = nq2p->back;
+
+	//if queue1 is not empty but queue2 is empty, close queue2
+	}else{
+		printf("queue2 is empty. close queue2!\n");
+	}
+	//free queue2
+	free(nq2p);
+	nq2p->front = NULL;
+	nq2p->back = NULL;
+	q2p = NULL;
+	
 }
