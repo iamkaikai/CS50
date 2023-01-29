@@ -47,17 +47,14 @@ queue_t* qopen(void){
 void qclose(queue_t *qp){
     my_queue *nqp;
     nqp = ((my_queue*) qp);
-    printf("before front = %p\n", (void *)nqp->front);
-    printf("before back = %p\n", (void *)nqp->back);
     qnode_t *temp;
     while(nqp ->front != NULL){
         temp =nqp -> front;
         nqp -> front = nqp -> front -> next;
-        free(temp);
+				free(temp->element);
+				free(temp);
     }
     nqp -> back = NULL;
-    printf("front = %p\n", (void *)nqp->front);
-    printf("back = %p\n", (void *)nqp->back);
     free(nqp);
 }
 
@@ -69,13 +66,7 @@ int32_t qput(queue_t *qp, void *elementp){
     my_queue *nqp = (my_queue*)qp;
     qnode_t *new = malloc(sizeof(qnode_t));
 
-		//if( !(new = malloc(sizeof(qnode_t)))){
-		//	printf("Error:malloc failed allocating queue!!!!\n");                                  
-		//free(new);
-		//return -1;           
-		//}
-		
-    new->element = elementp;
+		new->element = elementp;
     new->next = NULL;
 
   	//if queue is empty, make new become head
@@ -103,7 +94,8 @@ int32_t qput(queue_t *qp, void *elementp){
 /* get the first first element from queue, removing it from the queue */
 void* qget(queue_t *qp) {
     my_queue *nqp = (my_queue*)qp;
-    qnode_t *temp = nqp->front->element;
+    qnode_t *element = nqp->front->element;
+		qnode_t *node = nqp->front;
     //if queue is empty, return -1
     if((nqp->front == NULL) && (nqp->back == NULL)) { 
         printf("Error: the queue is empty. \n");
@@ -111,11 +103,9 @@ void* qget(queue_t *qp) {
 		//make the second node head and delete previous head
 		} else {
         nqp->front = nqp->front->next;
-        //printf("Got %p, removed it from queue. \n", (void *)temp->element);
-        //free(temp);
-				//return temp->element;
-    }
-		return (void*)temp;
+        free(node);
+		}
+		return (void*)element;
 }
 
 
