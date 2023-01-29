@@ -33,7 +33,7 @@ typedef struct my_queue {
 /* create an empty queue */                                                     
 queue_t* qopen(void){                                                           
     my_queue *q;                                                               
-    if( !(q = (my_queue*)malloc(sizeof(q))) ){                                  
+    if( !(q = (my_queue*)malloc(sizeof(my_queue))) ){                                  
         printf("Error:malloc failed allocating queue!!!!\n");                   
         return NULL;                                                            
     }
@@ -157,13 +157,21 @@ void qconcat(queue_t *q1p, queue_t *q2p){
 		nq1p->back = nq2p->back;
 
 	//if queue1 is not empty but queue2 is empty, close queue2
+	}else if(nq1p->front != NULL && \
+					 nq1p->back != NULL && \
+					 nq2p->front == NULL && \
+					 nq2p->back == NULL){
+
+		printf("queue2 is empty. close queue2!\n");		
+		
 	}else{
-		printf("queue2 is empty. close queue2!\n");
+		printf("Something wrong with front or back!\n");
+		exit(EXIT_FAILURE);
 	}
 	//free queue2
-	free(nq2p);
 	nq2p->front = NULL;
 	nq2p->back = NULL;
+	free(nq2p);
 	q2p = NULL;
 	
 }
