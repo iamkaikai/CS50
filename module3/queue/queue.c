@@ -115,7 +115,7 @@ void* qget(queue_t *qp) {
     //make the second node head and delete previous head                                             
     }else{
 			
-			qnode_t *front = nqp->front;
+			//			qnode_t *front = nqp->front;
 			
 			if(nqp->front->next == NULL){
 				elementP = nqp->front->element;
@@ -269,6 +269,7 @@ void* qremove(queue_t *qp,
             }
         }
     }
+		return NULL;
 }
 
 /* concatenatenates elements of q2 into q1                              
