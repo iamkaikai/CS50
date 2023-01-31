@@ -98,12 +98,12 @@ house_t *make_house(char *ownerP, char *addrP){
 //test in main
 int main(void){
 	
-	hashtable_t *qp1 = hopen(10);
+	hashtable_t *hp1 = hopen(10);
 	//	queue_t *qp2 = qopen();
 
-	//	car_t *car1 = make_car("ABCD1234", 1000, 2023);
-	//car_t *car2 = make_car("ABCD1235", 2000, 2021);
-	//car_t *car3 = make_car("ABCD1236", 3000, 2020);
+	car_t *car1 = make_car("ABCD1234", 1000, 2023);
+	car_t *car2 = make_car("ABCD1235", 2000, 2021);
+	car_t *car3 = make_car("ABCD1236", 3000, 2020);
 	//car_t *car4 = make_car("ABCD1237", 4000, 2030);
 	//car_t *car5 = make_car("ABCD1238", 5000, 2040);
 	//house_t *house1 = make_house("Lius", "6 juniper cr");
@@ -116,11 +116,9 @@ int main(void){
 	//void (*fn_p5)(void *cp) = print_house;
 	//void (*fn_p6)(void *cp) = print_next;
 
-	//qput(qp1, car1);
-	//qput(qp1, car2);
-	//qput(qp1, car3);
-	//qput(qp2, car4);
-	//qput(qp2, car5);
+	hput(hp1, car1, (char*)car1->plate, 8);
+	hput(hp1, car2, (char*)car2->plate, 8);
+	hput(hp1, car3, (char*)car3->plate, 8);
 	//	qput(qp2, house1);
 	//qput(qp2, house2);
 	//void *qp3 = qget(qp1);
@@ -142,7 +140,7 @@ int main(void){
 	//qapply(qp2, fn_p1);
 
 	//qclose(qp1);
-	
+	hclose(hp1);
 	exit(EXIT_SUCCESS);
 	
 }

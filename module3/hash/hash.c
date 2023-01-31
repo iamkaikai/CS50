@@ -65,7 +65,6 @@ typedef struct qnode {
 	void *element;
 }qnode_t;
 
-
 typedef struct my_queue{
 	qnode_t *front;
 	qnode_t *back;
@@ -109,8 +108,8 @@ void hclose(hashtable_t *htp){
     my_queue_t *qp = (my_queue_t*)ht->qp;
     for (int i = 0; i < (int)ht->hsize; i++) {
         my_queue_t *nqp = (my_queue_t*) &qp[i];
-        printf("before front = %p\n", (void *)nqp->front);
-        printf("before back = %p\n", (void *)nqp->back);
+        //printf("before front = %p\n", (void *)nqp->front);
+        //printf("before back = %p\n", (void *)nqp->back);
         qnode_t *temp;
         while(nqp ->front != NULL){
             temp =nqp -> front;
@@ -119,30 +118,59 @@ void hclose(hashtable_t *htp){
             free(temp);
         }
         nqp -> back = NULL;
-        printf("front = %p\n", (void *)nqp->front);
-        printf("back = %p\n", (void *)nqp->back);
+        //printf("front = %p\n", (void *)nqp->front);
+        //printf("back = %p\n", (void *)nqp->back);
     }
     free(qp);
     free(ht);
-    printf("closed\n");
+    printf("hash closed\n");
 }
 
 
 /* hput -- puts an entry into a hash table under designated key                               
  * returns 0 for success; non-zero otherwise                                                  
  */
-/*int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen){
+int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen){
 
-	/*if(){
-
+	if(htp == NULL || ep == NULL || key == NULL || keylen < 0){
+		printf("argument invalid!");
 		return -1;
-
 	}else{
+		my_hashtable_t *ht = (my_hashtable_t*)htp;
+		uint32_t idx = SuperFastHash(key, keylen, ht->hsize);  //get key for hash
+		my_queue_t *qp = (my_queue_t*) &ht->qp[idx];
 
-		return 0;
-
+		printf("index in hash table = %u\n",idx);
+		
+		//check if there's enough of space
+		qnode_t *new;
+		if(!(new=(qnode_t*)malloc(sizeof(qnode_t)))){
+			printf("Error: malloc failed allocating qnode!");
+			return -1;
 		}
-		};*/
+
+		//create a new node to store ep
+		new->next = NULL;
+		new->element = (qnode_t*)ep;
+			
+		//if the queue is empty
+		if(qp->front == NULL && qp->back == NULL){
+			printf("put in empty queue!\n");
+			qp->front = new;
+			qp->back = new;
+			return 0;
+
+		//if the queue is not empty
+		}else{
+			printf("put in non-empty queue!\n");
+			qp->back->next = new;
+			qp->back = new;
+			return 0;
+		}
+		
+		return -1;
+	}
+}
 
 
 
