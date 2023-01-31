@@ -71,36 +71,78 @@ typedef struct my_queue{
 	qnode_t *back;
 }my_queue_t;
 
+typedef struct my_hashtable{
+    uint32_t hsize;
+    my_queue_t *qp;
+}my_hashtable_t;
+
+
 /* hopen -- opens a hash table with initial size hsize */
 hashtable_t *hopen(uint32_t hsize){
   int i;
-  my_queue_t *ht;
-
-  if (!(ht = malloc(sizeof(my_queue_t)*hsize))) {
-    printf("Error: malloc failed allocating hash table!!\n");
+  my_queue_t *qp;
+  my_hashtable_t *ht;
+  if (!(ht = malloc(sizeof(my_hashtable_t)))){
+      printf("Error: malloc failed allocating hash table!!\n");
+      return NULL;
+  }
+  if (!(qp = malloc(sizeof(my_queue_t)*hsize))) {
+    printf("Error: malloc failed allocating queue!!\n");
     return NULL;
   }
-
   for (i = 0; i < hsize; i++) {
-    ht[i].front = NULL;
-    ht[i].back = NULL;
+    qp[i].front = NULL;
+    qp[i].back = NULL;
   }
-	printf("hash opened!\n");
+  ht->hsize = hsize;
+  ht->qp = qp;
+
+  printf("hash opened!\n");
   return (hashtable_t*)ht;
 }
 
 
 
 /* hclose -- closes a hash table */
-void hclose(hashtable_t *htp);
-
+void hclose(hashtable_t *htp){
+    my_hashtable_t *ht = (my_hashtable_t*)htp;
+    my_queue_t *qp = (my_queue_t*)ht->qp;
+    for (int i = 0; i < (int)ht->hsize; i++) {
+        my_queue_t *nqp = (my_queue_t*) &qp[i];
+        printf("before front = %p\n", (void *)nqp->front);
+        printf("before back = %p\n", (void *)nqp->back);
+        qnode_t *temp;
+        while(nqp ->front != NULL){
+            temp =nqp -> front;
+            nqp -> front = nqp -> front -> next;
+            free(temp->element);
+            free(temp);
+        }
+        nqp -> back = NULL;
+        printf("front = %p\n", (void *)nqp->front);
+        printf("back = %p\n", (void *)nqp->back);
+    }
+    free(qp);
+    free(ht);
+    printf("closed\n");
+}
 
 
 /* hput -- puts an entry into a hash table under designated key                               
  * returns 0 for success; non-zero otherwise                                                  
  */
+/*int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen){
 
-int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen);
+	/*if(){
+
+		return -1;
+
+	}else{
+
+		return 0;
+
+		}
+		};*/
 
 
 
