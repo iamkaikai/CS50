@@ -3,8 +3,6 @@
  *
  */
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <hash.h>
 /* 
  * SuperFastHash() -- produces a number between 0 and the tablesize-1.
@@ -60,35 +58,34 @@ static uint32_t SuperFastHash (const char *data, int len, uint32_t tablesize) {
 }
 
 
+typedef struct my_queue{
+	qnode_t *front;
+	qnode_t *back;
+}my_queue_t;
+
 typedef struct qnode {
 	struct qnode *next;
 	void *element;
 }qnode_t;
 
 
-typedef struct my_queue{
-	qnode_t *front;
-	qnode_t *back;
-}my_queue_t;
+
 
 /* hopen -- opens a hash table with initial size hsize */
 hashtable_t *hopen(uint32_t hsize){
-  int i;
-  my_queue_t *ht;
-
-  if (!(ht = malloc(sizeof(my_queue_t)*hsize))) {
-    printf("Error: malloc failed allocating hash table!!\n");
-    return NULL;
-  }
-
-  for (i = 0; i < hsize; i++) {
-    ht[i].front = NULL;
-    ht[i].back = NULL;
-  }
-	printf("hash opened!\n");
-  return (hashtable_t*)ht;
-}
-
+	my_queue *ht[hsize];
+	
+	if( !(hp = (my_table_t*)malloc(sizeof(my_table_t))) ){
+		printf("Error: malloc failed allocating hash table!!\n");
+		return NULL;
+	}
+	
+	for(i=0;i<hsize;i++){
+		ht[i] -> front = NULL;
+		ht[i] -> back = NULL;
+	}
+	return (hashtable_t*)ht;
+};
 
 
 /* hclose -- closes a hash table */
