@@ -116,10 +116,13 @@ int main(void){
 	//void (*fn_p5)(void *cp) = print_house;
 	//void (*fn_p6)(void *cp) = print_next;
 
+	
 	hput(hp1, car1, (char*)car1->plate, 8);
 	hput(hp1, car2, (char*)car2->plate, 8);
 	hput(hp1, car3, (char*)car3->plate, 8);
-	//	qput(qp2, house1);
+	hput(hp1, car1, (char*)car1->plate, 8);
+	
+//	qput(qp2, house1);
 	//qput(qp2, house2);
 	//void *qp3 = qget(qp1);
   //void *qp4 = qget(qp1);

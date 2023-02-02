@@ -18,5 +18,5 @@ test:
 					./queue.test.sh
 					./hash.test.sh
 
-clean:
+c:
 			rm -f hash.o queue.o thash tqueue

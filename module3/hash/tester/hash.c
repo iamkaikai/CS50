@@ -3,7 +3,11 @@
  *
  */
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <hash.h>
+#include <queue.h>
+
 /* 
  * SuperFastHash() -- produces a number between 0 and the tablesize-1.
  * 
@@ -13,6 +17,11 @@
  * Hash.
  */
 #define get16bits(d) (*((const uint16_t *) (d)))
+
+typedef struct my_hashtable{
+    uint32_t hsize;
+    queue_t **qp;
+}my_hashtable_t;
 
 static uint32_t SuperFastHash (const char *data, int len, uint32_t tablesize) {
   uint32_t hash = len, tmp;
@@ -57,39 +66,53 @@ static uint32_t SuperFastHash (const char *data, int len, uint32_t tablesize) {
   return hash % tablesize;
 }
 
-
-typedef struct my_queue{
-	qnode_t *front;
-	qnode_t *back;
-}my_queue_t;
-
-typedef struct qnode {
-	struct qnode *next;
-	void *element;
-}qnode_t;
-
-
-
-
 /* hopen -- opens a hash table with initial size hsize */
 hashtable_t *hopen(uint32_t hsize){
-	my_queue *ht[hsize];
-	
-	if( !(hp = (my_table_t*)malloc(sizeof(my_table_t))) ){
+
+  printf("open start!\n");
+  my_hashtable_t *ht;
+  if (!(ht = malloc(sizeof(my_hashtable_t)))){
+      printf("Error: malloc failed allocating hash table!!\n");
+      return NULL;
+  }
+
+	if (!(ht->qp = malloc(sizeof(queue_t*)*hsize))){
 		printf("Error: malloc failed allocating hash table!!\n");
-		return NULL;
-	}
+    return NULL;
+  }
 	
-	for(i=0;i<hsize;i++){
-		ht[i] -> front = NULL;
-		ht[i] -> back = NULL;
-	}
-	return (hashtable_t*)ht;
-};
+  ht->hsize = hsize;
+  for (int i=0; i<(ht->hsize);i++){
+     ht->qp[i] = NULL;
+  }
+  printf("hash opened!\n");
+  return (hashtable_t*)ht;
+}
+
+
 
 
 /* hclose -- closes a hash table */
-void hclose(hashtable_t *htp);
+void hclose(hashtable_t *htp){
+	//int counter = 0;
+  if(htp == NULL){
+		printf("argument invalid!");
+    exit(1);
+  }
+  my_hashtable_t *ht = (my_hashtable_t*)htp;
+  for (int i=0; i< (ht->hsize); i++){
+
+    if (ht->qp[i] != NULL){
+
+			//need to skip the close if the pointer is already free
+      qclose(ht->qp[i]);
+			printf("address '%p' free\n", (void*)ht->qp[i]);
+    }
+  }
+	//free(ht->qp);
+  //free(ht);
+  printf("closed\n");
+}
 
 
 
@@ -97,12 +120,46 @@ void hclose(hashtable_t *htp);
  * returns 0 for success; non-zero otherwise                                                  
  */
 
-int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen);
+int32_t hput(hashtable_t *htp, void *ep, const char *key, int keylen){
+    if(htp == NULL || ep == NULL || key == NULL || keylen < 0){
+        printf("argument invalid!");
+        return -1;
+    }else{
+        my_hashtable_t *ht = (my_hashtable_t*)htp;
+        uint32_t idx = SuperFastHash(key, keylen, ht->hsize);  //get key for hash
+        if ((ht->qp[idx]) != NULL){
+
+					printf("address of ep = %p\n", ep);
+					qput(ht->qp[idx],ep);
+						printf("data put in index '%u'; address '%p'; element '%p'\n",idx,(void*)ht->qp[idx],(void*)ep);
+            return 0;
+        }else{
+            queue_t *nqp = qopen();
+            qput(nqp,ep);
+						printf("data open in index '%u'; address '%p'; element '%p'\n",idx,(void*)ht->qp[idx],(void*)ep);                                             
+            ht->qp[idx]=nqp;
+            return 0;
+        }
+    }
+}
+
 
 
 
 /* happly -- applies a function to every entry in hash table */
-void happly(hashtable_t *htp, void (*fn)(void* ep));
+void happly(hashtable_t *htp, void (*fn)(void* ep)){
+    if(htp == NULL){
+        printf("argument invalid!");
+        exit(1);
+    }else {
+        my_hashtable_t *ht = (my_hashtable_t *) htp;
+        for (int i=0; i<ht->hsize;i++){
+            if ((ht->qp[i]) != NULL){
+                qapply(ht->qp[i],fn);
+            }
+        }
+    }
+}
 
 
 
@@ -113,7 +170,17 @@ void happly(hashtable_t *htp, void (*fn)(void* ep));
 void *hsearch(hashtable_t *htp,
 							bool (*searchfn)(void* elementp, const void* searchkeyp),
 				      const char *key,
-				      int32_t keylen);
+				      int32_t keylen){
+    if(htp == NULL){
+        printf("argument invalid!");
+        exit(1);
+    }else {
+        my_hashtable_t *ht = (my_hashtable_t *) htp;
+        uint32_t idx = SuperFastHash(key, keylen, ht->hsize);  //get key for hash
+        qsearch(ht->qp[idx],searchfn,key);
+				exit(0);
+		}
+}
 
 
 
@@ -127,5 +194,15 @@ void *hremove(hashtable_t *htp,
         bool (*searchfn)(void* elementp, const void* searchkeyp),
 							
         const char *key,
-							
-        int32_t keylen);       
+
+        int32_t keylen){
+    if(htp == NULL){
+        printf("argument invalid!");
+        exit(1);
+    }else {
+        my_hashtable_t *ht = (my_hashtable_t *) htp;
+        uint32_t idx = SuperFastHash(key, keylen, ht->hsize);  //get key for hash
+        qremove(ht->qp[idx],searchfn,key);
+    }
+		return NULL;
+}
