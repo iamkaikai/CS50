@@ -26,10 +26,8 @@ int main(void){
 	printf("Hello\n");
 	char seed[] = "https://thayer.github.io/engs50/";
 	int depth = 0;
-	webpage_t *page;
+	webpage_t *page = webpage_new(seed, depth, NULL);;
 	void (*fn1)(queue_t *) = print_element;
-	
-	page = webpage_new(seed, depth, NULL);	
 
 	//if seed page fails
 	if(page == NULL){
@@ -60,12 +58,13 @@ int main(void){
 				}else{
 					printf("Found URL (external): %s\n\n",result);
 				}
+				//free the URL for each iteration
 				free(result);
 			}
-				//free the URL for each iteration
 			qapply(url_queue, fn1);
 			qclose(url_queue);
 			
+		//if fetch failed, exit	
 		}else{
 			exit(EXIT_FAILURE);
 		}
