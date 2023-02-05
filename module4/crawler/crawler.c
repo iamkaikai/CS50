@@ -61,6 +61,7 @@ int main(void){
 				//free the URL for each iteration
 				free(result);
 			}
+			printf("---------- Queue of URLs ------------\n");
 			qapply(url_queue, fn1);
 			qclose(url_queue);
 			
