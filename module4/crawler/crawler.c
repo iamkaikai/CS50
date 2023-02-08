@@ -12,9 +12,9 @@
 # include <stdlib.h>   
 # include <string.h>
 # include <stdbool.h>
-# include <webpage.h>
-# include <queue.h>
-# include <hash.h>
+# include "../utils/webpage.h"
+# include "../utils/queue.h"
+# include "../utils/hash.h"
 
 void print_element(void *p){
   webpage_t *qp = (webpage_t *) p;
@@ -68,16 +68,18 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash)
 	bool fetch = webpage_fetch(cur_page);
 		
 	printf("current page = %p\n",(void*)cur_page);
-        
+	webpage_t *new_page = NULL;
 	if(fetch){
 		//check current page in hash
 		url_search_and_hput(cur_page, hash);	
-		while((pos = webpage_getNextURL(cur_page, pos, &result)) > 0 && next_depth <= max){	
+		while((pos = webpage_getNextURL(cur_page, pos, &result)) > 0 ){	
 			///webpage_t *new_page;
-			if(IsInternalURL(result)){
+			
+			if(IsInternalURL(result) && next_depth <= max){
 				printf("Depth %d: Found URL (internal): %s\n",next_depth, result);
 				//put URL in to the queue
-				webpage_t *new_page = webpage_new(result, next_depth, NULL);   //how to free this?
+				//webpage_t *new_page = webpage_new(result, next_depth, NULL);   //how to free this?
+				new_page = webpage_new(result, next_depth, NULL);
 				if( qsearch(url_queue, fn2, new_page) == false &&\
 						url_search_and_hput(new_page, hash) == false)
 				{
@@ -93,11 +95,11 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash)
 	}else{
 		exit(EXIT_FAILURE);
 	}
-
+	
 	printf("---------- Queue of URLs ------------\n");
 	qapply(url_queue, fn1);
 	printf("-------------------------------------\n\n");
-	//webpage_delete(new_page);
+	webpage_delete(new_page);
 	webpage_delete(cur_page);
 	return cur_depth;
 }
@@ -123,8 +125,10 @@ int main(void){
 		qp = qget(url_queue);
 	}
 	
-	//qclose(url_queue);
+	
+	qclose(url_queue);
 	//hclose(url_hash);
+
 	exit(EXIT_SUCCESS);
 }
 
