@@ -58,6 +58,7 @@ void get_url(webpage_t *cur_page, queue_t *url_queue, hashtable_t *hash){
 	char *result;   //store urls crawled in current page
 	int cur_depth = webpage_getDepth(cur_page);
 	int next_depth = cur_depth+1;
+	webpage_t *new_page;
 	void (*fn1)(queue_t *) = print_element;
 	bool (*fn2)(void *elementp, const void* searchkeyp) = qsearch_url;
 	printf("current page = %p\n",(void*)cur_page);
@@ -72,20 +73,16 @@ void get_url(webpage_t *cur_page, queue_t *url_queue, hashtable_t *hash){
 				if(IsInternalURL(result)){
 					printf("Depth %d: Found URL (internal): %s\n",next_depth, result);
 					//put URL in to the queue
-					webpage_t *new_page = webpage_new(result, next_depth, NULL);
+					new_page = webpage_new(result, next_depth, NULL);
 					if( qsearch(url_queue, fn2, new_page) == false &&\
-							url_search_and_hput(new_page, hash) == false){
+							url_search_and_hput(new_page, hash) == false)
+					{
 						//printf("put in queue!\n");
 						qput(url_queue, new_page);
-					}else{
-						//			printf("> already in queue!\n");
 					}
-					//check whether current page is in hash table, if not put it in
-										
 				}else{
 					printf("Depth %d: Found URL (external): %s\n\n",next_depth, result);
 				}
-
 				free(result);
 		}
 	}else{
@@ -95,6 +92,8 @@ void get_url(webpage_t *cur_page, queue_t *url_queue, hashtable_t *hash){
 	printf("---------- Queue of URLs ------------\n");
 	qapply(url_queue, fn1);
 	printf("-------------------------------------\n\n");
+	webpage_delete(new_page);
+	webpage_delete(cur_page);
 }
 
 int main(void){
@@ -105,23 +104,20 @@ int main(void){
 	uint32_t hsize = 500;
 	hashtable_t *url_hash  = hopen(hsize);
 	queue_t *url_queue = qopen();
-	//int count = 0;
-	//int count_limit = 200;
+	int count = 0;
 
 	//initiate the seed page
 	webpage_t *seed_page = webpage_new(seed, depth, NULL);;
 	get_url(seed_page, url_queue, url_hash);   		
-
+	
 	//iterate through all the pages in the queue until it's empty
 	void *qp = qget(url_queue);
-	while(qp != NULL){
+	while(qp != NULL && count<0){
 		get_url(qp, url_queue, url_hash);
 		qp = qget(url_queue);
 	}
-	
-	//qclose(url_queue);
+	qclose(url_queue);
 	//hclose(url_hash);
-	webpage_delete(seed_page);
 	exit(EXIT_SUCCESS);
 }
 
