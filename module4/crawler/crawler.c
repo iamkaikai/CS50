@@ -102,6 +102,30 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash)
 	return cur_depth;
 }
 
+int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
+	FILE *fp;
+	char path[64];
+	char name[64];
+	char depth[64];
+	char html_len[64];
+	char *url = webpage_getURL(pagep);
+	char *html = webpage_getHTML(pagep);
+
+	strcpy(path, dirname);	
+	sprintf(name, "%d", id);
+	sprintf(depth, "%d", webpage_getDepth(pagep));
+	sprintf(html_len, "%d", webpage_getHTMLlen(pagep));
+	
+	fp = fopen(strcat(path,name), "w+");
+
+	fprintf(fp, "%s\n%s\n%s\n%s\n", url, depth, html_len, html);
+	
+	fclose(fp);
+	
+	return 0;
+}
+
+
 int main(void){
 
 	//setup up basic variables
