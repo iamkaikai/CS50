@@ -119,14 +119,11 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash,
 						free(new_url);
             //webpage_delete(new_page);
         }
-    }else{
-        exit(EXIT_FAILURE);
     }
         
     printf("---------- Queue of URLs ------------\n");
     qapply(url_queue, fn1);
     printf("-------------------------------------\n\n");
-    //webpage_delete(new_page);
     webpage_delete(cur_page);
     return cur_depth;
 }
@@ -146,11 +143,11 @@ int main(int argc, char *argv[]){
         char *seed = argv[1];
         // char *seed = "https://thayer.github.io/engs50/";
         int max_depth = atoi(argv[3]);
-        int crawl_depth = 0;
         uint32_t hsize = 999;
+        int crawl_depth;
         hashtable_t *url_hash     = hopen(hsize);
         queue_t *url_queue = qopen();
-        int counter = 0;
+        int counter = 1;
         char *dirname = argv[2];
         
         //initiate the seed page
@@ -162,6 +159,7 @@ int main(int argc, char *argv[]){
         while(qp != NULL){
 					//while(qp != NULL && crawl_depth <= max_depth){
             crawl_depth = get_url(qp, max_depth, url_queue, url_hash, counter, dirname);
+            printf("%d iteration done!\n",counter);
             qp = qget(url_queue);
             // pagesave(qp, counter, dirname);
             counter +=1;
