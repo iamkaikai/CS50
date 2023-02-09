@@ -12,9 +12,9 @@
 # include <stdlib.h>   
 # include <string.h>
 # include <stdbool.h>
-# include "../utils/webpage.h"
-# include "../utils/queue.h"
-# include "../utils/hash.h"
+# include <webpage.h>
+# include <queue.h>
+# include <hash.h>
 
 void print_element(void *p){
 	if(p == NULL){
@@ -33,10 +33,6 @@ void print_element(void *p){
 
 int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
 	FILE *fp;
-	if (!(fp = malloc(sizeof(FILE)))){
-		printf("Error: malloc failed allocating hash table!!\n");
-		return 1;
-	}
 	char path[64];
 	char name[64];
 	char depth[64];
@@ -60,6 +56,7 @@ bool hsearch_url(void *elementp, const void* searchkeyp){
 
 bool qsearch_url(void *elementp,const void* keyp){
 	char *ep = webpage_getURL((webpage_t *)elementp);
+	printf("%s\n",ep);
 	char *skp = webpage_getURL((webpage_t *)keyp);
 	return strcmp(ep, skp) == 0;
 }
@@ -95,7 +92,7 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash,
 		printf("\ncurrent url = %s\n", webpage_getURL(cur_page));
 
 		if(url_search_and_hput(cur_page, hash) == false){
-			pagesave(cur_page, counter, dirname);
+			//pagesave(cur_page, counter, dirname);
 			printf("file %d: %s saved!!!\n\n",counter, webpage_getURL(cur_page));
 		}else{
 			printf("already in hash!!\n\n");
@@ -103,10 +100,10 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash,
 		
 		while((pos = webpage_getNextURL(cur_page, pos, &result)) > 0 ){	
 			// printf("get NextURL\n");
-			if(IsInternalURL(result) && next_depth <= max){
-
+			new_page = webpage_new(result, next_depth, NULL);
+			if(IsInternalURL(result) && next_depth <= max && url_search_and_hput(new_page, hash)){
 				// printf("Depth %d: Found URL (internal): %s\n",next_depth, result);
-				new_page = webpage_new(result, next_depth, NULL);
+				//new_page = webpage_new(result, next_depth, NULL);
 				if( qsearch(url_queue, fn2, new_page) == false)
 					// url_search_and_hput(new_page, hash) == false)
 				{
@@ -157,10 +154,11 @@ int main(int argc, char *argv[]){
 	while(qp != NULL && crawl_depth <= max_depth){
 		crawl_depth = get_url(qp, max_depth, url_queue, url_hash, counter, dirname);
 		qp = qget(url_queue);
+		//pagesave(qp, counter, dirname);
+		counter +=1;
 		if(qp == NULL){
 			printf("queue is empty!!!\n\n");
 		}
-		counter +=1;	
 	}
 	
 	qclose(url_queue);
