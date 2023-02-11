@@ -101,7 +101,7 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash,
 					strcpy(new_url, result);
 					webpage_t *new_page = webpage_new(new_url, next_depth, NULL);
             if(IsInternalURL(result) && next_depth <= max){
-                // printf("Depth %d: Found URL (internal): %s\n",next_depth, result);
+
                 //new_page = webpage_new(result, next_depth, NULL);
                 if( qsearch(url_queue, fn2, new_page) == false && \
                     hsearch(hash, fn3, result, strlen(result)) == false)
@@ -111,19 +111,20 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash,
 									webpage_delete(new_page);
 								}
             }else{
-							// printf("Depth %d: Found URL (external): %s\n\n",next_depth, result);
 							webpage_delete(new_page);
             }
-            // printf("pos = %d\n",pos);
+
             free(result);
 						free(new_url);
-            //webpage_delete(new_page);
         }
+    }else{
+			counter -=1;
     }
         
     printf("---------- Queue of URLs ------------\n");
     qapply(url_queue, fn1);
     printf("-------------------------------------\n\n");
+
     webpage_delete(cur_page);
     return cur_depth;
 }
@@ -141,13 +142,12 @@ int main(int argc, char *argv[]){
 				}
 
         char *seed = argv[1];
-        // char *seed = "https://thayer.github.io/engs50/";
         int max_depth = atoi(argv[3]);
+        int crawl_depth = 0;
         uint32_t hsize = 999;
-        int crawl_depth;
         hashtable_t *url_hash     = hopen(hsize);
         queue_t *url_queue = qopen();
-        int counter = 1;
+        int counter = 0;
         char *dirname = argv[2];
         
         //initiate the seed page
@@ -157,17 +157,13 @@ int main(int argc, char *argv[]){
         //iterate through all the pages in the queue until it's empty
         void *qp = qget(url_queue);
         while(qp != NULL){
-					//while(qp != NULL && crawl_depth <= max_depth){
             crawl_depth = get_url(qp, max_depth, url_queue, url_hash, counter, dirname);
-            printf("%d iteration done!\n",counter);
             qp = qget(url_queue);
-            // pagesave(qp, counter, dirname);
             counter +=1;
             if(qp == NULL){
                 printf("queue is empty!!!\n\n");
             }
         }
-          
         qclose(url_queue);
         hclose(url_hash);
         exit(EXIT_SUCCESS);
