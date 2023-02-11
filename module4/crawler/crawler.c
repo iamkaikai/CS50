@@ -15,6 +15,7 @@
 # include <webpage.h>
 # include <queue.h>
 # include <hash.h>
+# include <pageio.h>
 
 void print_element(void *p){
     if(p == NULL){
@@ -48,6 +49,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     fclose(fp);
     return 0;
 }
+
 bool hsearch_url(void *elementp, const void* searchkeyp){
     char *ep = (char *)elementp;
     char *skp = (char *)searchkeyp;
@@ -76,7 +78,6 @@ bool url_search_and_hput(webpage_t *page, hashtable_t *hash){
     return result;
 }
 
-
 int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash, int counter, char *dirname){
     //get all the urls in the same layer
     int pos = 0;
@@ -87,8 +88,7 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash,
     bool (*fn2)(void *elementp, const void* searchkeyp) = qsearch_url;
     bool (*fn3)(void *elementp, const void* searchkeyp) = hsearch_url;
     bool fetch = webpage_fetch(cur_page);
-    //webpage_t *new_page = NULL;
-        
+
     if(fetch){
         printf("\ncurrent url = %s\n", webpage_getURL(cur_page));
         url_search_and_hput(cur_page, hash);
@@ -97,28 +97,27 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash,
 
         while((pos = webpage_getNextURL(cur_page, pos, &result)) > 0 ){          
             // printf("get NextURL\n");
-					char *new_url = malloc(strlen(result)+1);
-					strcpy(new_url, result);
-					webpage_t *new_page = webpage_new(new_url, next_depth, NULL);
+            char *new_url = malloc(strlen(result)+1);
+            strcpy(new_url, result);
+            webpage_t *new_page = webpage_new(new_url, next_depth, NULL);
             if(IsInternalURL(result) && next_depth <= max){
-
                 //new_page = webpage_new(result, next_depth, NULL);
                 if( qsearch(url_queue, fn2, new_page) == false && \
                     hsearch(hash, fn3, result, strlen(result)) == false)
                 {
                     qput(url_queue, new_page);
                 }else{
-									webpage_delete(new_page);
-								}
+					webpage_delete(new_page);
+				}
             }else{
-							webpage_delete(new_page);
+                    webpage_delete(new_page);
             }
 
             free(result);
-						free(new_url);
+            free(new_url);
         }
     }else{
-			counter -=1;
+        counter -=1;
     }
         
     printf("---------- Queue of URLs ------------\n");
@@ -135,19 +134,18 @@ int main(int argc, char *argv[]){
             printf("usage: -seedurl -pagedir -maxdepth\n");
             exit(EXIT_FAILURE);
         }else if(argc == 5){
-					argv[1] = argv[2];
-					argv[2] = argv[3];
-					argv[3] = argv[4];
+            argv[1] = argv[2];
+            argv[2] = argv[3];
+            argv[3] = argv[4];
 					
-				}
-
+        }
         char *seed = argv[1];
         int max_depth = atoi(argv[3]);
-        int crawl_depth = 0;
+        // int crawl_depth = 0;
         uint32_t hsize = 999;
-        hashtable_t *url_hash     = hopen(hsize);
+        hashtable_t *url_hash = hopen(hsize);
         queue_t *url_queue = qopen();
-        int counter = 0;
+        int counter = 1;
         char *dirname = argv[2];
         
         //initiate the seed page
@@ -157,7 +155,7 @@ int main(int argc, char *argv[]){
         //iterate through all the pages in the queue until it's empty
         void *qp = qget(url_queue);
         while(qp != NULL){
-            crawl_depth = get_url(qp, max_depth, url_queue, url_hash, counter, dirname);
+            get_url(qp, max_depth, url_queue, url_hash, counter, dirname);
             qp = qget(url_queue);
             counter +=1;
             if(qp == NULL){
