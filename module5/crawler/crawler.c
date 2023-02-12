@@ -146,5 +146,6 @@ int main(int argc, char *argv[]){
         }
         qclose(url_queue);
         hclose(url_hash);
+       
         exit(EXIT_SUCCESS);
 }

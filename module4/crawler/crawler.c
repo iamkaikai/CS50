@@ -15,7 +15,10 @@
 # include <webpage.h>
 # include <queue.h>
 # include <hash.h>
+<<<<<<< HEAD
+=======
 # include <pageio.h>
+>>>>>>> 6d1a89c59c2cdf802c77cd449f38a48c5d54f8f3
 
 void print_element(void *p){
     if(p == NULL){
@@ -33,6 +36,23 @@ void print_element(void *p){
 }
 
 int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
+<<<<<<< HEAD
+	FILE *fp;
+	char path[64];
+	char name[64];
+	char depth[64];
+	char html_len[64];
+	char *url = webpage_getURL(pagep);
+	char *html = webpage_getHTML(pagep);
+	strcpy(path, dirname);
+	sprintf(name, "%d", id);
+	sprintf(depth, "%d", webpage_getDepth(pagep));
+	sprintf(html_len, "%d", webpage_getHTMLlen(pagep));
+	fp = fopen(strcat(path,name), "w+");
+	fprintf(fp, "%s\n%s\n%s\n%s\n", url,depth,html_len, html);
+	fclose(fp);
+	return 0;
+=======
     FILE *fp;
     char path[64];
     char name[64];
@@ -48,6 +68,7 @@ int32_t pagesave(webpage_t *pagep, int id, char *dirname) {
     fprintf(fp, "%s\n%s\n%s\n%s\n", url,depth,html_len, html);
     fclose(fp);
     return 0;
+>>>>>>> 6d1a89c59c2cdf802c77cd449f38a48c5d54f8f3
 }
 
 bool hsearch_url(void *elementp, const void* searchkeyp){
@@ -57,10 +78,17 @@ bool hsearch_url(void *elementp, const void* searchkeyp){
 }
 
 bool qsearch_url(void *elementp,const void* keyp){
+<<<<<<< HEAD
+	char *ep = webpage_getURL((webpage_t *)elementp);
+	printf("%s\n",ep);
+	char *skp = webpage_getURL((webpage_t *)keyp);
+	return strcmp(ep, skp) == 0;
+=======
     char *ep = webpage_getURL((webpage_t *)elementp);
     // printf("%s\n",ep);
     char *skp = webpage_getURL((webpage_t *)keyp);
     return strcmp(ep, skp) == 0;
+>>>>>>> 6d1a89c59c2cdf802c77cd449f38a48c5d54f8f3
 }
 
 bool url_search_and_hput(webpage_t *page, hashtable_t *hash){
@@ -89,6 +117,43 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash,
     bool (*fn3)(void *elementp, const void* searchkeyp) = hsearch_url;
     bool fetch = webpage_fetch(cur_page);
 
+<<<<<<< HEAD
+		if(url_search_and_hput(cur_page, hash) == false){
+			//pagesave(cur_page, counter, dirname);
+			printf("file %d: %s saved!!!\n\n",counter, webpage_getURL(cur_page));
+		}else{
+			printf("already in hash!!\n\n");
+		}
+		
+		while((pos = webpage_getNextURL(cur_page, pos, &result)) > 0 ){	
+			// printf("get NextURL\n");
+			new_page = webpage_new(result, next_depth, NULL);
+			if(IsInternalURL(result) && next_depth <= max && url_search_and_hput(new_page, hash)){
+				// printf("Depth %d: Found URL (internal): %s\n",next_depth, result);
+				//new_page = webpage_new(result, next_depth, NULL);
+				if( qsearch(url_queue, fn2, new_page) == false)
+					// url_search_and_hput(new_page, hash) == false)
+				{
+					qput(url_queue, new_page);
+				}	
+			}else{
+				// printf("Depth %d: Found URL (external): %s\n\n",next_depth, result);
+			}
+			// printf("pos = %d\n",pos);
+			free(result);
+			// webpage_delete(new_page);
+		}
+	}else{
+		exit(EXIT_FAILURE);
+	}
+	
+	printf("---------- Queue of URLs ------------\n");
+	qapply(url_queue, fn1);
+	printf("-------------------------------------\n\n");
+	webpage_delete(new_page);
+	webpage_delete(cur_page);
+	return cur_depth;
+=======
     if(fetch){
         printf("\ncurrent url = %s\n", webpage_getURL(cur_page));
         url_search_and_hput(cur_page, hash);
@@ -126,6 +191,7 @@ int get_url(webpage_t *cur_page, int max, queue_t *url_queue, hashtable_t *hash,
 
     webpage_delete(cur_page);
     return cur_depth;
+>>>>>>> 6d1a89c59c2cdf802c77cd449f38a48c5d54f8f3
 }
 
 int main(int argc, char *argv[]){
@@ -152,6 +218,37 @@ int main(int argc, char *argv[]){
         webpage_t *seed_page = webpage_new(seed, 0, NULL);                     
         qput(url_queue, seed_page);
 
+<<<<<<< HEAD
+	char *seed = argv[1];
+	// char *seed = "https://thayer.github.io/engs50/";
+	int max_depth = atoi(argv[3]);
+	int crawl_depth = 0;
+	uint32_t hsize = 999;
+	hashtable_t *url_hash  = hopen(hsize);
+	queue_t *url_queue = qopen();
+	int counter = 0;
+	char *dirname = argv[2];
+	
+	//initiate the seed page
+	webpage_t *seed_page = webpage_new(seed, 0, NULL); 		
+	qput(url_queue, seed_page);
+
+	//iterate through all the pages in the queue until it's empty
+	void *qp = qget(url_queue);
+	while(qp != NULL && crawl_depth <= max_depth){
+		crawl_depth = get_url(qp, max_depth, url_queue, url_hash, counter, dirname);
+		qp = qget(url_queue);
+		//pagesave(qp, counter, dirname);
+		counter +=1;
+		if(qp == NULL){
+			printf("queue is empty!!!\n\n");
+		}
+	}
+	
+	qclose(url_queue);
+	hclose(url_hash);
+	exit(EXIT_SUCCESS);
+=======
         //iterate through all the pages in the queue until it's empty
         void *qp = qget(url_queue);
         while(qp != NULL){
@@ -165,4 +262,5 @@ int main(int argc, char *argv[]){
         qclose(url_queue);
         hclose(url_hash);
         exit(EXIT_SUCCESS);
+>>>>>>> 6d1a89c59c2cdf802c77cd449f38a48c5d54f8f3
 }
