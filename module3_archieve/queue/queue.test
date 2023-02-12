@@ -1,7 +1,0 @@
-#!/bin/bash                                                                    
-./test1                                                                        
-./runtest.sh "./test1"                                                         
-./test2                                                                        
-./runtest.sh "./test2"                                                         
-./test3                                                                        
-./runtest.sh "./test3"
