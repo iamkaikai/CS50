@@ -17,7 +17,7 @@
 # include <queue.h>
 # include <hash.h>
 # include <pageio.h>
-
+# include <ctype.h>
 int total = 0;
 typedef struct wordCountPair {                                                                     
     char* word;                                                                         
@@ -108,12 +108,12 @@ int step2(void){
  fp = fopen("./1", "w");
  while( (pos = webpage_getNextWord(page, pos, &word)) > 0){ 
 
-  // fprintf(fp, "%s\n", word);
+  fprintf(fp, "%s\n", word);
  
-  char *w = NormalizeWord(word); 
+	 char *w = NormalizeWord(word); 
   if(w != NULL){
    fprintf(fp, "%s\n", word);
-  }
+	 }
   free(word);
  }
  fclose(fp);
