@@ -159,6 +159,7 @@ void modifyQWordCountHash(hashtable_t* master_word_hash, char* id){
 		
 		idCountPair_t *new_idCountPair = malloc(sizeof(idCountPair_t));
 		new_idCountPair->count = local_wordCountPair->count;
+
 		new_idCountPair->id = id;
 
 		qput(global_word_hash_node->page_queue, new_idCountPair);
@@ -176,14 +177,35 @@ void modifyQWordCountHash(hashtable_t* master_word_hash, char* id){
 	webpage_delete(page);
 }
 
-int main(void){
+int main(int argc, char *argv[]){
+	char *id;
+	if(argc < 2){
+        printf("usage: -seedurl -pagedir -maxdepth\n");
+        exit(EXIT_FAILURE);
+    }else if(argc == 3){
+        id = argv[2];
+    }else if(argc ==2 ){
+		id = argv[1];
+	}
 	uint32_t hsize = 999;
 	hashtable_t *master_word_hash = hopen(hsize);
-	char *id = "1";
-	modifyQWordCountHash(master_word_hash,id);
+	queue_t* index_queue = qopen();
+	int int_id = atoi(id);
+	for (int i=1;i<=int_id;i++){
+		char *new_id = malloc(strlen(id)+1);
+		sprintf(new_id, "%d", i); 
+		char *queue_id = malloc(strlen(id)+1);
+		strcpy(queue_id, new_id);
+		qput(index_queue,queue_id);
+		modifyQWordCountHash(master_word_hash,queue_id);
+		free(new_id);
+	}
+	happly(master_word_hash,sumwords);
 	happly(master_word_hash,print_hash_element);
 	happly(master_word_hash,removeWordAndQueue);
+	qclose(index_queue);
 	hclose(master_word_hash);
+	printf("total = %d\n",total);
 	return 0;
 }
 
