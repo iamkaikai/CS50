@@ -18,18 +18,10 @@
 # include <hash.h>
 # include <pageio.h>
 # include <ctype.h>
+# include <indexio.h>
 
 int total = 0;
-typedef struct wordCountPair {                                                                     
-    char *word;                                                                         
-    int count;
-	queue_t *page_queue;                                                                    
-} wordCountPair_t;
 
-typedef struct idCountPair {                                                                     
-    char *id;                                                                         
-    int count;                                                               
-} idCountPair_t;
 
 char* NormalizeWord(char *word){
 	//if the word is has more than 2 chars and is alphabet
@@ -47,16 +39,16 @@ char* NormalizeWord(char *word){
 	return word;
 }
 
-void print_queue_element(void* p){
-    idCountPair_t *qp = (idCountPair_t *) p;
-    char* current_id = qp->id;
-	int current_count = qp->count;
-    if(current_id != NULL){
-        printf("id = %s\ncount=%d\n", current_id, current_count);
-    }else{
-        printf("word error!\n");
-	}
-}
+// void print_queue_element(void* p){
+//     idCountPair_t *qp = (idCountPair_t *) p;
+//     char* current_id = qp->id;
+// 	int current_count = qp->count;
+//     if(current_id != NULL){
+//         printf("id = %s; count = %d\n", current_id, current_count);
+//     }else{
+//         printf("word error!\n");
+// 	}
+// }
 
 void removeWordAndQueue(void *p){
     wordCountPair_t *qp = (wordCountPair_t *) p;
@@ -85,20 +77,21 @@ bool qsearch_word(void *elementp, const void* searchkeyp){
     return strcmp(element, skp) == 0;
 }
 
-void print_hash_element(void *p){
-    wordCountPair_t *qp = (wordCountPair_t *) p;
-    char *current_word = qp->word;
-		int current_count = qp->count;
-		queue_t* current_queue = qp->page_queue;
-		if(current_word != NULL){
-			printf("word = %s %d\n", current_word,current_count);
-			qapply(current_queue,print_queue_element);
-		}else if(current_word== NULL){
-			printf("word\n");
-    }else{
-			printf("word error!\n");
-    }
-}
+// void print_hash_element(void *p){
+//     wordCountPair_t *qp = (wordCountPair_t *) p;
+//     char *current_word = qp->word;
+// 		int current_count = qp->count;
+// 		queue_t* current_queue = qp->page_queue;
+// 		if(current_word != NULL){
+// 			printf("word = %s - total %d\n", current_word,current_count);
+// 			qapply(current_queue,print_queue_element);
+// 			printf("------------------\n");
+// 		}else if(current_word== NULL){
+// 			printf("word\n");
+//     }else{
+// 			printf("word error!\n");
+//     }
+// }
 
 void createWordCountHash(hashtable_t* word_hash,char* word){
 	if (word!=NULL){
@@ -156,12 +149,9 @@ void modifyQWordCountHash(hashtable_t* master_word_hash, char* id){
 		
 		wordCountPair_t *local_wordCountPair = hremove(local_word_hash,hsearch_word,curr_word,strlen(curr_word));
 		wordCountPair_t *global_word_hash_node = hremove(master_word_hash,hsearch_word,curr_word,strlen(curr_word));
-		
 		idCountPair_t *new_idCountPair = malloc(sizeof(idCountPair_t));
 		new_idCountPair->count = local_wordCountPair->count;
-
 		new_idCountPair->id = id;
-
 		qput(global_word_hash_node->page_queue, new_idCountPair);
 		hput(master_word_hash,global_word_hash_node,global_word_hash_node->word,strlen(global_word_hash_node->word));
 		free(local_wordCountPair->word);
@@ -180,7 +170,7 @@ void modifyQWordCountHash(hashtable_t* master_word_hash, char* id){
 int main(int argc, char *argv[]){
 	char *id;
 	if(argc < 2){
-        printf("usage: -seedurl -pagedir -maxdepth\n");
+        printf("usage: -ending id\n");
         exit(EXIT_FAILURE);
     }else if(argc == 3){
         id = argv[2];
@@ -201,11 +191,18 @@ int main(int argc, char *argv[]){
 		free(new_id);
 	}
 	happly(master_word_hash,sumwords);
-	happly(master_word_hash,print_hash_element);
+	
+	// happly(master_word_hash,print_hash_element);
+	indexsave(master_word_hash, "./", "test");
+	hashtable_t *h = hopen(hsize);;
+	indexload("./", "test", h);
+	// happly(h,print_hash_element);
+
+	//free all the memory
 	happly(master_word_hash,removeWordAndQueue);
 	qclose(index_queue);
 	hclose(master_word_hash);
-	printf("total = %d\n",total);
+	// printf("total = %d\n",total);
 	return 0;
 }
 
