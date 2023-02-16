@@ -39,16 +39,16 @@ char* NormalizeWord(char *word){
 	return word;
 }
 
-// void print_queue_element(void* p){
-//     idCountPair_t *qp = (idCountPair_t *) p;
-//     char* current_id = qp->id;
-// 	int current_count = qp->count;
-//     if(current_id != NULL){
-//         printf("id = %s; count = %d\n", current_id, current_count);
-//     }else{
-//         printf("word error!\n");
-// 	}
-// }
+void print_queue_element(void* p){
+    idCountPair_t *qp = (idCountPair_t *) p;
+    char* current_id = qp->id;
+	int current_count = qp->count;
+    if(current_id != NULL){
+        printf("id = %s; count = %d\n", current_id, current_count);
+    }else{
+        printf("word error!\n");
+	}
+}
 
 void removeWordAndQueue(void *p){
     wordCountPair_t *qp = (wordCountPair_t *) p;
@@ -77,21 +77,21 @@ bool qsearch_word(void *elementp, const void* searchkeyp){
     return strcmp(element, skp) == 0;
 }
 
-// void print_hash_element(void *p){
-//     wordCountPair_t *qp = (wordCountPair_t *) p;
-//     char *current_word = qp->word;
-// 		int current_count = qp->count;
-// 		queue_t* current_queue = qp->page_queue;
-// 		if(current_word != NULL){
-// 			printf("word = %s - total %d\n", current_word,current_count);
-// 			qapply(current_queue,print_queue_element);
-// 			printf("------------------\n");
-// 		}else if(current_word== NULL){
-// 			printf("word\n");
-//     }else{
-// 			printf("word error!\n");
-//     }
-// }
+void print_hash_element(void *p){
+    wordCountPair_t *qp = (wordCountPair_t *) p;
+    char *current_word = qp->word;
+		int current_count = qp->count;
+		queue_t* current_queue = qp->page_queue;
+		if(current_word != NULL){
+			printf("word = %s - total %d\n", current_word,current_count);
+			qapply(current_queue,print_queue_element);
+			printf("------------------\n");
+		}else if(current_word== NULL){
+			printf("word\n");
+    }else{
+			printf("word error!\n");
+    }
+}
 
 void createWordCountHash(hashtable_t* word_hash,char* word){
 	if (word!=NULL){
@@ -196,12 +196,15 @@ int main(int argc, char *argv[]){
 	indexsave(master_word_hash, "./", "test");
 	hashtable_t *h = hopen(hsize);;
 	indexload("./", "test", h);
-	// happly(h,print_hash_element);
-
+	happly(h,print_hash_element);
+	
 	//free all the memory
 	happly(master_word_hash,removeWordAndQueue);
 	qclose(index_queue);
 	hclose(master_word_hash);
+	happly(h,removeWordAndQueue);
+	hclose(h);
+
 	// printf("total = %d\n",total);
 	return 0;
 }
