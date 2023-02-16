@@ -58,76 +58,53 @@ hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
 	char file_location[256];
 	sprintf(file_location, "%s%s", fileDir, fileName);
 	char line[1024];
-
 	fp = fopen(file_location, "r");
+	
 	if(fp == NULL){
 		printf("unable to create file!!\n");
 	}else{
 		//read each line and create a wordCountPair
 		while(fgets(line, sizeof(line), fp)){
             
-			//initialization
+			int total_count = 0;
 			wordCountPair_t *new_wordCountPair = malloc(sizeof(wordCountPair_t));
 			queue_t* queue = qopen();
-			
-			//variable initialization
-			char *word = malloc(sizeof(char)*128);
-			int total_word;
-			char *id = malloc(sizeof(char)*4);
-  			int id_count;
-
-			//split each word by space, get the first word
-			char *token = strtok(line, " ");
+			char *word = malloc(sizeof(char)*128);	// word in wordCountPair_t
+			char *id = malloc(sizeof(char)*4);  	// int total_word;
+			char *token = strtok(line, " ");		//get the first word
 			strcpy(word, token);
-			int cur_pos = 1;
-			int first = 1; 	
 			new_wordCountPair->word = word;
 			
-			//create one/multiple idCountPair_t to store value in the queue of wordCountPair
-			idCountPair_t *new_idCountPair = malloc(sizeof(idCountPair_t));
-			while( token != NULL){
-				
-				//if there are more than one idCountPair_t, create a new one
-				first = 0;
-				if(first == 0){
-
-				}
-				//differentiate the 'ID' and 'count' base on the sequence
-				cur_pos +=1;
-				token = strtok(NULL, " ");
-				
-				//before reaching the end of the string
-				if(token != NULL){	
-					if(cur_pos %2 == 0){
-						strcpy(id, token);
-						printf("%s\n", id);
-						new_idCountPair->id = id;
-						
-					}else{
-						char *id_count_temp = malloc(sizeof(char)*4);
-						strcpy(id_count_temp, token);
-						int val = strtol(id_count_temp, NULL, 10);
-						id_count = val;
-						new_idCountPair->count = id_count;
-						total_word += id_count;
-						qput(new_wordCountPair->page_queue,new_idCountPair);
-					
-						free(id_count_temp);
-						
-					}
-				}
-
-			}
-			
-			new_wordCountPair->count = count;
-			new_wordCountPair->page_queue = queue;
-			hput(word_hash,new_wordCountPair,new_word,strlen(new_word));
-        }
-		// fscanf(fp, "%s\n", line);
-	}
-	fclose(fp);
-
-	// free(word);
-	// free(id);
+			while( token != NULL ){
 	
+				//create idCountPair_t to store value in the queue of wordCountPair
+				idCountPair_t *new_idCountPair = malloc(sizeof(idCountPair_t));
+				//get 'ID' and store it into new_idCountPair
+				token = strtok(NULL, " \n");
+
+				if(token != NULL){
+					strcpy(id, token);
+					new_idCountPair->id = id;	
+					token = strtok(NULL, " \n");
+					char *id_count = malloc(sizeof(char)*4);
+					strcpy(id_count, token);
+					int count = strtol(id_count, NULL, 10);
+					new_idCountPair->count = count;
+					qput(queue,new_idCountPair);
+					total_count += count;
+					free(id_count);
+				}else{
+					free(new_idCountPair);
+					
+				}
+			}
+			free(id);
+			free(word);
+			new_wordCountPair->page_queue = queue;
+			new_wordCountPair->count = total_count;
+			hput(master_hash,new_wordCountPair,word,strlen(word));
+			
+        };
+	}
+	fclose(fp);	
 }
