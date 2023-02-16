@@ -40,10 +40,8 @@ void save_hash_element(void *p){
 }
 
 void indexsave(hashtable_t *master_hash, char *fileDir, char *fileName){
-
 	char file_location[256];
   	sprintf(file_location, "%s%s", fileDir, fileName);
-	
 	fp = fopen(file_location, "w");
 	if(fp == NULL){
 		printf("unable to create file!!\n");
@@ -54,12 +52,11 @@ void indexsave(hashtable_t *master_hash, char *fileDir, char *fileName){
 }
 
 hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
-
 	char file_location[256];
 	sprintf(file_location, "%s%s", fileDir, fileName);
 	char line[1024];
 	fp = fopen(file_location, "r");
-	
+
 	if(fp == NULL){
 		printf("unable to create file!!\n");
 	}else{
@@ -71,19 +68,21 @@ hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
 			queue_t* queue = qopen();
 			char *word = malloc(sizeof(char)*128);	// word in wordCountPair_t
 			char *id = malloc(sizeof(char)*4);  	// int total_word;
+			
 			char *token = strtok(line, " ");		//get the first word
-			strcpy(word, token);
+			strcpy(word, token); 					
 			new_wordCountPair->word = word;
 			
 			while( token != NULL ){
 	
 				//create idCountPair_t to store value in the queue of wordCountPair
 				idCountPair_t *new_idCountPair = malloc(sizeof(idCountPair_t));
-				//get 'ID' and store it into new_idCountPair
 				token = strtok(NULL, " \n");
-
+				
+				//the strtok() will return a NULL pointer at the end of each line
+				//need to check again to make sure we don't store NULL as the value
 				if(token != NULL){
-					strcpy(id, token);
+					strcpy(id, token);            
 					new_idCountPair->id = id;	
 					token = strtok(NULL, " \n");
 					char *id_count = malloc(sizeof(char)*4);
@@ -95,15 +94,12 @@ hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
 					free(id_count);
 				}else{
 					free(new_idCountPair);
-					
 				}
 			}
 			free(id);
-			free(word);
 			new_wordCountPair->page_queue = queue;
 			new_wordCountPair->count = total_count;
 			hput(master_hash,new_wordCountPair,word,strlen(word));
-			
         };
 	}
 	fclose(fp);	
