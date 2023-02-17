@@ -173,6 +173,32 @@ int main(int argc, char *argv[]){
 	hashtable_t *master_word_hash = hopen(hsize);
 	queue_t* index_queue = qopen();
 
+	/////////// for step 5 ///////////
+	char *id;
+	if(argc < 2){
+        printf("usage: -ending id\n");
+        exit(EXIT_FAILURE);
+    }else if(argc == 3){
+        id = argv[2];
+    }else if(argc ==2 ){
+		id = argv[1];
+	}
+	int int_id = atoi(id);
+	for (int i=1;i<=int_id;i++){
+		char *new_id = malloc(strlen(id)+1);
+		sprintf(new_id, "%d", i); 
+		char *queue_id = malloc(strlen(id)+1);
+		strcpy(queue_id, new_id);
+		qput(index_queue,queue_id);
+		modifyQWordCountHash(master_word_hash,queue_id);
+		free(new_id);
+	}
+	happly(master_word_hash,sumwords);
+	happly(master_word_hash,print_hash_element);
+	indexsave(master_word_hash, "./", "test");
+	/////////// end of step 5 ///////////
+
+	///////// for step 7 ///////////
 	char *pagedir;
 	char *indexnm;
 	if(argc < 3){
@@ -204,12 +230,21 @@ int main(int argc, char *argv[]){
 	} 
 	indexsave(master_word_hash, pagedir, indexnm);
     closedir(dr);
+	/////////////// end of step 7 ///////////
 
 	// //free all the memory
 	happly(master_word_hash,removeWordAndQueue);
 	qclose(index_queue);
 	hclose(master_word_hash);
 
+	/////////// for step 6 ///////////
+	// hashtable_t *h = hopen(hsize);						
+	// indexload("./", "test", h);							//load saved file to index hash
+	// happly(h,print_hash_element);
+	// happly(h,removeWordAndQueue);
+	// hclose(h);
+	// happly(master_word_hash,sumwords);
+	// printf("total = %d\n",total);
 	return 0;
 }
 
