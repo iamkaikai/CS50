@@ -198,7 +198,7 @@ int main(int argc, char *argv[]){
 	// happly(master_word_hash,print_hash_element);
 	
 
-	/////////// for step 7 ///////////
+	///////// for step 7 ///////////
 	char *pagedir;
 	char *indexnm;
 	if(argc < 3){
@@ -206,6 +206,7 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }else if(argc == 3){			//normal usage
         pagedir = argv[1];
+		printf("%s\n",pagedir);
 		indexnm = argv[2];
     }else if(argc ==4 ){			//for valgrind --leak-check=full arg
 		pagedir = argv[2];
@@ -213,31 +214,44 @@ int main(int argc, char *argv[]){
 	}
 
 	struct dirent *de;  			// Pointer for directory entry
-    DIR *dr = opendir(pagedir);		// Read the source directory
+    DIR *dr = opendir("../pages/");		// Read the source directory
     if (dr == NULL) {  				// opendir returns NULL if couldn't open directory
         printf("Could not open the directory");
         return 0;
     }else{
+		de = readdir(dr);
+		de = readdir(dr);
 		while ((de = readdir(dr)) != NULL){
-			char *fileName_cpy = malloc(sizeof(char)*8);
-			strcpy(fileName_cpy, de->d_name); 
-			qput(index_queue,fileName_cpy);
-			modifyQWordCountHash(master_word_hash,fileName_cpy);
-			// happly(master_word_hash,sumwords);
-			// happly(master_word_hash,print_hash_element);
+				char *fileName_cpy = malloc(sizeof(char)*18);
+				strcpy(fileName_cpy, de->d_name); 
+				printf("%s\n",fileName_cpy);
+				//if (isdigit(fileName_cpy)){
+				qput(index_queue,fileName_cpy);
+				modifyQWordCountHash(master_word_hash,fileName_cpy);
+				//printf("\n%s\n",fileName_cpy);
+				//}
+				//else{
+				//	free(fileName_cpy);
+				//}
+				//strcpy(fileName_cpy, de->d_name); 
+				//qput(index_queue,fileName_cpy);
+				//modifyQWordCountHash(master_word_hash,"1");
+				//printf("\n%s\n",fileName_cpy);
+				// happly(master_word_hash,sumwords);
+				// happly(master_word_hash,print_hash_element);
 		}
 	} 
-	// indexsave(master_word_hash, pagedir, indexnm);
+	indexsave(master_word_hash, pagedir, indexnm);
     closedir(dr);
 
-	//free all the memory
+	// //free all the memory
 	happly(master_word_hash,removeWordAndQueue);
 	qclose(index_queue);
 	hclose(master_word_hash);
 
 	/////////// for step 6 ///////////
 	// indexsave(master_word_hash, pagedir, indexnm); 		//save index hash to file
-	// hashtable_t *h = hopen(hsize);						
+	// hashtab/le_t *h = hopen(hsize);						
 	// indexload("./", "test", h);							//load saved file to index hash
 	// happly(h,print_hash_element);
 	// happly(h,removeWordAndQueue);
