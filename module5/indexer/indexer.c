@@ -21,9 +21,7 @@
 # include <indexio.h>
 # include <dirent.h>
 
-
 int total = 0;
-
 
 char* NormalizeWord(char *word){
 	//if the word is has more than 2 chars and is alphabet
@@ -206,7 +204,6 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }else if(argc == 3){			//normal usage
         pagedir = argv[1];
-		printf("%s\n",pagedir);
 		indexnm = argv[2];
     }else if(argc ==4 ){			//for valgrind --leak-check=full arg
 		pagedir = argv[2];
@@ -214,7 +211,7 @@ int main(int argc, char *argv[]){
 	}
 
 	struct dirent *de;  			// Pointer for directory entry
-    DIR *dr = opendir("../pages/");		// Read the source directory
+    DIR *dr = opendir(pagedir);		// Read the source directory
     if (dr == NULL) {  				// opendir returns NULL if couldn't open directory
         printf("Could not open the directory");
         return 0;
@@ -225,20 +222,8 @@ int main(int argc, char *argv[]){
 				char *fileName_cpy = malloc(sizeof(char)*18);
 				strcpy(fileName_cpy, de->d_name); 
 				printf("%s\n",fileName_cpy);
-				//if (isdigit(fileName_cpy)){
 				qput(index_queue,fileName_cpy);
 				modifyQWordCountHash(master_word_hash,fileName_cpy);
-				//printf("\n%s\n",fileName_cpy);
-				//}
-				//else{
-				//	free(fileName_cpy);
-				//}
-				//strcpy(fileName_cpy, de->d_name); 
-				//qput(index_queue,fileName_cpy);
-				//modifyQWordCountHash(master_word_hash,"1");
-				//printf("\n%s\n",fileName_cpy);
-				// happly(master_word_hash,sumwords);
-				// happly(master_word_hash,print_hash_element);
 		}
 	} 
 	indexsave(master_word_hash, pagedir, indexnm);
