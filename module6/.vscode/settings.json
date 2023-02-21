@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "inttypes.h": "c",
+        "type_traits": "c"
+    }
+}
