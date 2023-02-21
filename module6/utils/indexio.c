@@ -98,7 +98,7 @@ hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
 				}else{
 					free(new_idCountPair);
 				}
-				free(id);
+				// free(id);
 			}
 			
 			new_wordCountPair->page_queue = queue;

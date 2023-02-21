@@ -22,6 +22,7 @@
 #include <indexio.h>
 
 #define MAXSIZE 100 
+char *word_for_search;  //store value for hsearch cmp
 
 void print_queue_element(void* p){
     idCountPair_t *qp = (idCountPair_t *) p;
@@ -38,15 +39,16 @@ void print_queue_element(void* p){
 void print_hash_element(void *p){
     wordCountPair_t *qp = (wordCountPair_t *) p;
     char *current_word = qp->word;
-		int current_count = qp->count;
-		queue_t* current_queue = qp->page_queue;
-		if(current_word != NULL){
-			printf("%s: %d\n", current_word,current_count);
-			qapply(current_queue,print_queue_element);
-		}else if(current_word== NULL){
-			printf("word\n");
+    int current_count = qp->count;
+    // queue_t* current_queue = qp->page_queue;
+    // printf("current_word = '%s'\n",current_word);
+    if(current_word != NULL && strcmp(current_word,word_for_search) ==0){
+        printf("%s: %d ", current_word,current_count);
+        // qapply(current_queue,print_queue_element);
+    }else if(current_word== NULL){
+        printf("word\n");
     }else{
-			printf("word error!\n");
+		// printf("word error!\n");
     }
 }
 
@@ -62,17 +64,16 @@ int main(void){
     char input[MAXSIZE];
     char* token; 
     char* printArray[MAXSIZE];
-    char delimiter[]=" \t"; 
-
+    char delimiter[]=" \t\n"; 
+    word_for_search = (char*)malloc(sizeof(char)*100);
     printf("> ");
     fgets(input,99,stdin);                          //input    
     token = strtok(input, delimiter);               //split the first word from input
     int qry_count = 0;                              //count how many words of input are there
     hashtable_t *index_hash = hopen(999);           //hash for index
     indexload("../pages/", "index",index_hash);     //load index
-
-    while (input != NULL){
     
+    while (input != NULL){
         int invalid = 0;                            //keep track of invalid input
         if (feof(stdin)) {
             printf("\n");
@@ -82,48 +83,29 @@ int main(void){
         while(token != NULL){
             for(int i=0; i< strlen(token) && strcmp(&token[i],"\n"); i++) {
 			    if (!isalpha(token[i])) {
-				    printf("[invalid query]\n");
+                    printf("[invalid query]\n");
 				    invalid = 1;
                     break;
 			    }
-			    token[i] = tolower(token[i]);
+                token[i] = tolower(token[i]);
 		    }
+            // printf("token = '%s'\n",token);
             printArray[qry_count] = token; 
-            token = strtok(NULL, " "); 
+            token = strtok(NULL, " \n"); 
             qry_count++;
 		}
     
         if(invalid != 1){
-            printf("1!!!!!!!!\n");
             for(int j=0; j<qry_count; j++){
-                //if last word
-                printf("j!!!!!!!!\n");   
-                if(j == qry_count-1){ 
-                    printf("2!!!!!!!!\n");           
-                    if(strlen(printArray[j])>3 && strcmp(printArray[j], "and\n") != 0){
-                         
-                        printArray[strcspn(printArray[j], "\n")] = 0;
-                        printf("%s %lu --------\n", printArray[j], strlen(printArray[j]));       //////this is for step1 grading
-                        printf("3!!!!!!!!\n");
-
-                        // if(hsearch(index_hash,hsearch_word,printArray[j],strlen(printArray[j])-1)){
-                        //     printf("4!!!!!!!!\n");
-                        //     printf("word '%s' found!\n", printArray[j]);
-                        //     // happly(index_hash,print_hash_element);
-                        // }
-                    }
-                }else{
-                    printf("5!!!!!!!!\n");
-                    if(strlen(printArray[j])>2 && strcmp(printArray[j], "and") != 0){
-                        printf("6!!!!!!!!\n");
-                        // printf("%s ", printArray[j]);       ////////this is for step1 grading
-                        if(hsearch(index_hash,hsearch_word,printArray[j],strlen(printArray[j]))){
-                            printf("7!!!!!!!!\n");
-                            printf("word '%s' found!\n", printArray[j]);
-                            // happly(index_hash,print_hash_element);
-                        }           
-                    }
-                }
+                if(strlen(printArray[j])>2 && strcmp(printArray[j], "and") != 0){
+                    // printf("%s ", printArray[j]);           //for step1 grading
+                    if(hsearch(index_hash,hsearch_word,printArray[j],strlen(printArray[j]))){
+                        // printf("word '%s' found!\n", printArray[j]);
+                        word_for_search = printArray[j];
+                        // printf("word_for_search = '%s' \n", word_for_search);
+                        happly(index_hash,print_hash_element);
+                    }           
+                } 
             }
         }
 
@@ -134,5 +116,6 @@ int main(void){
    		fgets(input,99,stdin); 
   	 	token = strtok(input, delimiter); 
 	}
+    free(word_for_search);
     return 0;
 }
