@@ -22,6 +22,17 @@
 #include <indexio.h>
 
 #define MAXSIZE 100 
+//global variables
+queue_t* rankQ;
+char* globalWord;
+int globalRank = 0;
+
+typedef struct idNode {   
+    int rank;                                                                     
+    char* id;
+    char* url;
+    queue_t* wordCountQueue;
+}idNode_t;
 
 void print_queue_element(void* p){
     idCountPair_t *qp = (idCountPair_t *) p;
@@ -56,6 +67,35 @@ void print_query_array(void *p){
     printf("%s ",qp);
 }
 
+void print_innerQ(void* p){
+    wordCountPair_t *qp = (wordCountPair_t *) p;
+    char *current_word = qp->word;
+	int current_count = qp->count;
+    printf("word:%s count:%d \n",current_word,current_count);
+}
+
+void print_rankQ(void *p){
+    idNode_t* element = (idNode_t*) p;
+    printf("rank = %d ",element->rank);
+    printf("Dos = %s :",element->id); 
+    printf(" %s \n",element->url); 
+    //printf("inner queue:\n");
+    //qapply(element->wordCountQueue,print_innerQ);
+}
+
+void clean_Q_in_rankQ(void* p){
+    wordCountPair_t* element = (wordCountPair_t*) p;
+    free(element->word);
+}
+//subject to change
+void clean_rankQ(void *p){
+    idNode_t* element = (idNode_t*) p;
+    qapply(element->wordCountQueue,clean_Q_in_rankQ);
+    free(element->id);
+    free(element->url);
+    qclose(element->wordCountQueue);
+}
+
 void clean_query_array(queue_t *p){
     void *q = qget(p);
     while(( q != NULL)){
@@ -86,8 +126,70 @@ bool hsearch_word(void *elementp, const void* searchkeyp){
     return strcmp(ep, skp) == 0;
 }
 
-void query_search_in_index(queue_t *p, hashtable_t *h){
-    char *s = qget(p);
+bool qsearch_id(void *elementp, const void* searchkeyp){
+	char* element = (char*)elementp;
+    char *skp = (char*)searchkeyp;
+    return strcmp(element, skp) == 0;
+}
+
+bool qsearch_rankQId(void *elementp, const void* searchkeyp){
+    idNode_t* localIdNode = (idNode_t*) elementp;
+    char* element = localIdNode->id;
+    char *skp = (char*)searchkeyp;
+    return strcmp(element,skp)==0;
+}
+
+void putId(void* p){
+    idCountPair_t* icp = (idCountPair_t*)p;
+    if(qsearch(rankQ,qsearch_rankQId,icp->id)==NULL){
+        //possible leak
+        idNode_t* localIdNode = malloc(sizeof(idNode_t));
+        char* localId = malloc(sizeof(icp->id)+1);
+        strcpy(localId,icp->id);
+
+        char file_location[64];
+        sprintf(file_location, "%s%s", "../pages/", icp->id);
+        //printf("%s\n",file_location);
+        FILE *fp1 = fopen(file_location, "r");
+        char *url = malloc(sizeof(char)*256);
+        fscanf(fp1, "%s\n", url);
+        fclose(fp1);
+        localIdNode->id = localId;
+        localIdNode->url = url;
+        localIdNode->wordCountQueue=qopen();
+        qput(rankQ,localIdNode);
+    }
+}
+
+void putWordCount(void* p){
+    idCountPair_t* icp = (idCountPair_t*)p;
+    wordCountPair_t* localWordCountPair = malloc(sizeof(wordCountPair_t*)+4);
+    char* localWord = malloc(sizeof(char)*(strlen(globalWord) + 1));
+    strcpy(localWord,globalWord);
+    localWordCountPair->word = localWord;
+    int count =  icp->count;
+    localWordCountPair->count = count;
+    idNode_t* globalIdNode = qsearch(rankQ,qsearch_rankQId,icp->id);
+    queue_t* globalQueue = globalIdNode->wordCountQueue;
+    qput(globalQueue,localWordCountPair);
+}
+
+//for step3
+void andGate(void* p){
+    wordCountPair_t* localWordCountPair = (wordCountPair_t*) p;
+    int count = localWordCountPair->count;
+    globalRank += count;
+}
+void processRank(void* p){
+    idNode_t* localIdNode = (idNode_t*) p;
+    qapply(localIdNode->wordCountQueue,andGate);
+    localIdNode->rank = globalRank;
+    globalRank = 0;
+}
+
+
+void query_search_in_index(queue_t *queryQ, hashtable_t *h){
+    char *s = qget(queryQ);
     int and, len, count;
     while(s != NULL){
         and = strcmp(s, "and");
@@ -95,39 +197,46 @@ void query_search_in_index(queue_t *p, hashtable_t *h){
         void *search = hsearch(h, hsearch_word, s, strlen(s));
         if( search != NULL && and !=0 && len >2){
             wordCountPair_t* wcp = (wordCountPair_t*)search;
-            count = wcp->count;
-            printf("%s: %d ", s, count);
+            queue_t* page_queue = wcp->page_queue;
+            //get all the id
+            qapply(page_queue,putId);
+            // word is s
+            globalWord = s;
+            qapply(page_queue,putWordCount);
+            qapply(rankQ,processRank);
         }
-        s = qget(p);    //keep interating all the words in queryArray
+        s = qget(queryQ);    //keep interating all the words in queryArray
     }
 }
 
 int main(void){
     hashtable_t *index_hash = hopen(999);           //hash for index
-    indexload("../pages/", "index",index_hash);     //load index
+    indexload("../pages/", "index1",index_hash);     //load index
     char input[MAXSIZE];
     char* token; 
     char delimiter[]=" \t\n"; 
     queue_t *queryArray;
     int c;
     int invalid = 0;
-
+    //happly(index_hash,print_hash_element);
     printf("> ");
     scanf("%99[^\n]",input);
     queryArray = qopen();
 
     while (input != NULL){
-       
-        
+        rankQ = qopen();
         if (scanf("%99[^\n]", input) == EOF) {
             printf("\n");
+            printf("1");
+            //qapply(rankQ,clean_rankQ);
+            //qclose(rankQ);
             qclose(queryArray);
             happly(index_hash, removeWordAndQueue);
             hclose(index_hash);
             return 0;
         }
         
-         token = strtok(input, delimiter); 
+        token = strtok(input, delimiter); 
 
 	    while(token != NULL){
             for(int i=0; i< strlen(token) && strcmp(&token[i],"\n"); i++) {
@@ -148,6 +257,9 @@ int main(void){
             qapply(queryArray,print_query_array);
             printf("\n");
             query_search_in_index(queryArray, index_hash);
+            qapply(rankQ,print_rankQ);
+            qapply(rankQ,clean_rankQ);
+            qclose(rankQ);
         }
         
         //clean the queryArray 
@@ -160,10 +272,11 @@ int main(void){
         //start a new input
         printf("\n> ");
    		scanf("%99[^\n]",input); 
-  	 	token = strtok(input, delimiter);
+  	 	//token = strtok(input, delimiter);
         queryArray = qopen(); 
 	}
     qclose(queryArray);
     hclose(index_hash);
     return 0;
 }
+
