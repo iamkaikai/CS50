@@ -21,7 +21,7 @@ FILE *fp;
 void save_queue_element(void *p){
     idCountPair_t *qp = (idCountPair_t *) p;
     char* current_id = qp->id;
-		int current_count = qp->count;
+	int current_count = qp->count;
     if(current_id != NULL){
 			fprintf(fp, " %s %d", current_id, current_count);
     }
@@ -67,8 +67,6 @@ hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
 			wordCountPair_t *new_wordCountPair = malloc(sizeof(wordCountPair_t));
 			queue_t* queue = qopen();
 			char *word = malloc(sizeof(char)*128);	// word in wordCountPair_t
-			
-			
 			char *token = strtok(line, " ");		//get the first word
 			strcpy(word, token); 					
 			new_wordCountPair->word = word;
@@ -97,8 +95,8 @@ hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
 					free(id_count);
 				}else{
 					free(new_idCountPair);
+					free(id);
 				}
-				// free(id);
 			}
 			
 			new_wordCountPair->page_queue = queue;
