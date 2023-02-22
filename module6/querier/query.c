@@ -209,7 +209,7 @@ void query_search_in_index(queue_t *queryQ, hashtable_t *h){
     }
 }
 
-int main(void){
+int step1step2(void){
     hashtable_t *index_hash = hopen(999);           //hash for index
     indexload("../pages/", "index1",index_hash);     //load index
     char input[MAXSIZE];
@@ -278,5 +278,9 @@ int main(void){
     qclose(queryArray);
     hclose(index_hash);
     return 0;
+}
+
+int main(void){
+   return(step1step2());
 }
 
