@@ -74,19 +74,20 @@ hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
 			while( token != NULL ){
 	
 				//create idCountPair_t to store value in the queue of wordCountPair
-				char *id = malloc(sizeof(char)*4);  	// int total_word;
+				//char *id = malloc(sizeof(char)*4);  	// int total_word;
 				idCountPair_t *new_idCountPair = malloc(sizeof(idCountPair_t));
 				token = strtok(NULL, " \n");
 				
 				//the strtok() will return a NULL pointer at the end of each line
 				//need to check again to make sure we don't store NULL as the value
 				if(token != NULL){
+					char *id = malloc(sizeof(char)*4);
 					strcpy(id, token);  
 					// printf("id get = %s\n",id);          
 					new_idCountPair->id = id;	
 
 					token = strtok(NULL, " \n");
-					char *id_count = malloc(sizeof(char)*4);
+					char *id_count = malloc(sizeof(char)*4+1);
 					strcpy(id_count, token);
 					int count = strtol(id_count, NULL, 10);
 					new_idCountPair->count = count;
@@ -95,7 +96,7 @@ hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
 					free(id_count);
 				}else{
 					free(new_idCountPair);
-					free(id);
+					//free(id);
 				}
 			}
 			
