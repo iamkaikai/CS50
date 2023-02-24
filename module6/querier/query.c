@@ -146,39 +146,41 @@ void putId(void* p){
         idNode_t* localIdNode = malloc(sizeof(idNode_t));   //create a node to for id-based hash
         char* localId = malloc(sizeof(icp->id)+1);
         strcpy(localId,icp->id);
-        char file_location[64];        
+        char file_location[64];                                     
         sprintf(file_location, "%s%s", pages_path, icp->id);
-        //printf("%s\n",file_location);
-        FILE *fp1 = fopen(file_location, "r");
+        FILE *fp1 = fopen(file_location, "r");              //read the first line from crawled file
         char *url = malloc(sizeof(char)*256);
         fscanf(fp1, "%s\n", url);
         fclose(fp1);
-        localIdNode->id = localId;
+        localIdNode->id = localId;                          //put the rank into a queue
         localIdNode->url = url;
         localIdNode->wordCountQueue=qopen();
-        qput(rankQ,localIdNode);                            //put the rank into a queue
+        qput(rankQ,localIdNode);                            
     }
 }
 
+//re-use wordCountPair to store "word" and "count"
+//and store them in the globalIdNode of the globalQueue
 void putWordCount(void* p){
     idCountPair_t* icp = (idCountPair_t*)p;
     wordCountPair_t* localWordCountPair = malloc(sizeof(wordCountPair_t*)+4);
     char* localWord = malloc(sizeof(char)*(strlen(globalWord) + 1));
     strcpy(localWord,globalWord);
-    localWordCountPair->word = localWord;
     int count =  icp->count;
+    localWordCountPair->word = localWord;
     localWordCountPair->count = count;
     idNode_t* globalIdNode = qsearch(rankQ,qsearch_rankQId,icp->id);
     queue_t* globalQueue = globalIdNode->wordCountQueue;
     qput(globalQueue,localWordCountPair);
 }
 
-//for step3
 void andGate(void* p){
     wordCountPair_t* localWordCountPair = (wordCountPair_t*) p;
     int count = localWordCountPair->count;
     globalRank += count;
 }
+
+//iterate through all the counts in certain page ID and sum them up
 void processRank(void* p){
     idNode_t* localIdNode = (idNode_t*) p;
     qapply(localIdNode->wordCountQueue,andGate);
@@ -194,12 +196,13 @@ int getQueueLength(queue_t *p){
     qapply(p, length_counter);
     return array_len;
 }
+
 bool formatScaner(queue_t *queryArray){
     queue_t *temp = qopen();
     char *s = qget(queryArray);
     int pos = 0;
     int end = getQueueLength(queryArray);
-    int cur = 0;        //value: and =1; or = 2; others = 0;
+    int cur = 0;    //value fors tracking: and =1; or = 2; others = 0;
     int prev = 0;
     bool result = true;
     while(s != NULL){
@@ -276,9 +279,7 @@ int main(void){
     queryArray = qopen();
     int c;                                          //word count to clean input
     int invalid = 0;                                //label for invalid input format
-
-    printf("> ");                                   //accept input
-    // scanf("%99[^\n]",input);
+    printf("> ");                                   //show ">" for input
    
     while (true){
         rankQ = qopen();
@@ -295,8 +296,7 @@ int main(void){
         while(token != NULL){
             for(int i=0; i< strlen(token) && strcmp(&token[i],"\n"); i++) {
 			    if (!isalpha(token[i])) {
-                    // printf("------------0-------------\n");
-				    printf("[invalid query]\n");
+                    printf("[invalid query]\n");
 				    invalid = 1;
                     break;
 			    }
@@ -308,27 +308,38 @@ int main(void){
             token = strtok(NULL, " ");
 		}
         if(invalid != 1){
-            // printf("------------1-------------\n");
+            
             if(!formatScaner(queryArray)){
-                // printf("------------2-------------\n");
                 printf("[invalid query]\n");
                 qclose(rankQ);
             }else{
-                // printf("------------3-------------\n");
                 printf("(query keyword): ");
                 qapply(queryArray,print_query_array);
                 printf("\n\n");
+
+                //before passing queryArry to query_search_in_index
+                //chop queryArray by "or" and pass them respectfully
+                //if no "or" just treat it the same as and-only query
+                //e.g. "A and B or C and D" -> [A,B], [C,D]
+                //e.g. "A or C and D" -> [A], [C,D]
+                //e.g. "A and B and C" -> [A,B,C]
+                //count the rank seperately with multiple queries
+                //modify the rankQ, allowing multiple ranks of a same page ID exist in the queue
+                //after finishing all the andGate ranking for a same page,
+                //qapply to add them up for "orGate" ranking 
+                //update the final rank in rankQ for each ID
+
                 query_search_in_index(queryArray, index_hash);
                 qapply(rankQ,print_rankQ);
                 qapply(rankQ,clean_rankQ);
                 qclose(rankQ);
             }
         }else{
-            // printf("------------4-------------\n");
+            
             qapply(rankQ,clean_rankQ);
             qclose(rankQ);
         }
-        // printf("------------5-------------\n");
+        
         //clean the queryArray 
         clean_query_array(queryArray);
         qclose(queryArray);
