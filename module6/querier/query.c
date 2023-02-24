@@ -26,6 +26,7 @@
 queue_t* rankQ;
 char* globalWord;
 int globalRank = 0;
+int array_len = 0;                                 //count the length of the queryArray
 char *pages_path = "../../module5/pages/";   //location of your index page
 
 typedef struct idNode {   
@@ -80,8 +81,6 @@ void print_rankQ(void *p){
     printf("Rank = %d ",element->rank);
     printf("Page = %s :",element->id); 
     printf(" %s \n",element->url); 
-    //printf("inner queue:\n");
-    //qapply(element->wordCountQueue,print_innerQ);
 }
 
 void clean_Q_in_rankQ(void* p){
@@ -187,6 +186,65 @@ void processRank(void* p){
     globalRank = 0;
 }
 
+void length_counter(void *p){
+    array_len +=1;
+}
+
+int getQueueLength(queue_t *p){
+    qapply(p, length_counter);
+    return array_len;
+}
+bool formatScaner(queue_t *queryArray){
+    queue_t *temp = qopen();
+    char *s = qget(queryArray);
+    int pos = 0;
+    int end = getQueueLength(queryArray);
+    int cur = 0;        //value: and =1; or = 2; others = 0;
+    int prev = 0;
+    bool result = true;
+    while(s != NULL){
+        int and = strcmp(s, "and");
+        int or = strcmp(s, "or");
+        if(and == 0){
+            cur = 1;
+        }else if(or == 0){
+            cur = 2;
+        }else{
+            cur = 0;
+        }
+        //if and/or appears in the beginning or the end of the queue
+        if((pos == 0 && cur == 1) || (pos == 0 && cur == 2) || \
+           (pos == end && cur == 1) || (pos == end && cur == 2)){
+            array_len = 0;
+            result = false;
+            break;
+        //if and/or appears in the middle of the queue
+        }else{
+            if((prev == 1 && cur == 1) || (prev == 1 && cur == 2) ||\
+               (prev == 2 && cur == 1) || (prev == 2 && cur == 2)){
+                array_len = 0;
+                result = false;
+                break;
+            }
+        }
+        prev = cur;
+        pos++;
+        qput(temp, s);  //put word back to the queue
+        s = qget(queryArray);
+    }
+    // put word back
+    char *w = qget(temp);
+    while(w != NULL){
+        qput(queryArray, w);
+        w = qget(temp);
+    }
+    //free everthing
+    free(s);
+    qapply(temp,clean_query_array);
+    qclose(temp);
+    array_len = 0;
+    return result;
+}
 
 void query_search_in_index(queue_t *queryQ, hashtable_t *h){
     char *s = qget(queryQ);
@@ -200,12 +258,11 @@ void query_search_in_index(queue_t *queryQ, hashtable_t *h){
             queue_t* page_queue = wcp->page_queue;
             globalWord = s; 
             qapply(page_queue,putId);               //get all the id
-            qapply(page_queue,putWordCount);
-            qapply(rankQ,processRank);
+            qapply(page_queue,putWordCount);        //put value from index to idNode
+            qapply(rankQ,processRank);              //count the rank for each idNode
         }
         free(s);
         s = qget(queryQ);    //keep interating all the words in queryArray
-
     }
 }
 
@@ -238,6 +295,7 @@ int main(void){
         while(token != NULL){
             for(int i=0; i< strlen(token) && strcmp(&token[i],"\n"); i++) {
 			    if (!isalpha(token[i])) {
+                    // printf("------------0-------------\n");
 				    printf("[invalid query]\n");
 				    invalid = 1;
                     break;
@@ -250,18 +308,27 @@ int main(void){
             token = strtok(NULL, " ");
 		}
         if(invalid != 1){
-            printf("query keyword: ");
-            qapply(queryArray,print_query_array);
-            printf("\n");
-            query_search_in_index(queryArray, index_hash);
-            qapply(rankQ,print_rankQ);
-            qapply(rankQ,clean_rankQ);
-            qclose(rankQ);
+            // printf("------------1-------------\n");
+            if(!formatScaner(queryArray)){
+                // printf("------------2-------------\n");
+                printf("[invalid query]\n");
+                qclose(rankQ);
+            }else{
+                // printf("------------3-------------\n");
+                printf("(query keyword): ");
+                qapply(queryArray,print_query_array);
+                printf("\n\n");
+                query_search_in_index(queryArray, index_hash);
+                qapply(rankQ,print_rankQ);
+                qapply(rankQ,clean_rankQ);
+                qclose(rankQ);
+            }
         }else{
+            // printf("------------4-------------\n");
             qapply(rankQ,clean_rankQ);
             qclose(rankQ);
         }
-        
+        // printf("------------5-------------\n");
         //clean the queryArray 
         clean_query_array(queryArray);
         qclose(queryArray);
