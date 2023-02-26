@@ -1,3 +1,4 @@
+
 /* query.c --- 
  * 
  * 
@@ -28,6 +29,7 @@ char* globalWord;
 int globalRank = 0;
 int array_len = 0;                                 //count the length of the queryArray
 char *pages_path = "../../module5/pages/";   //location of your index page
+queue_t *queryArrayCopy;
 
 typedef struct idNode {   
     int rank;                                                                     
@@ -78,9 +80,16 @@ void print_innerQ(void* p){
 
 void print_rankQ(void *p){
     idNode_t* element = (idNode_t*) p;
-    printf("Rank = %d ",element->rank);
-    printf("Page = %s :",element->id); 
-    printf(" %s \n",element->url); 
+    if (element->rank!=0){
+        printf("Rank = %d ",element->rank);
+        printf("Page = %s :",element->id); 
+        printf(" %s \n",element->url);
+        //qapply(element->wordCountQueue,print_innerQ);
+    }
+    //printf("Rank = %d ",element->rank);
+   //printf("Page = %s :",element->id); 
+    //printf(" %s \n",element->url);
+    //qapply(element->wordCountQueue,print_innerQ); 
 }
 
 void clean_Q_in_rankQ(void* p){
@@ -174,16 +183,61 @@ void putWordCount(void* p){
     qput(globalQueue,localWordCountPair);
 }
 
-void andGate(void* p){
+void orGate(void* p){
     wordCountPair_t* localWordCountPair = (wordCountPair_t*) p;
     int count = localWordCountPair->count;
     globalRank += count;
 }
 
+
 //iterate through all the counts in certain page ID and sum them up
 void processRank(void* p){
     idNode_t* localIdNode = (idNode_t*) p;
-    qapply(localIdNode->wordCountQueue,andGate);
+
+
+    queue_t *temp = qopen();
+    char *s = qget(queryArrayCopy);
+    int pos = 0;
+    int andCount =99999;
+    while(s != NULL){
+        //printf("0\n");
+        void *search = qsearch(localIdNode->wordCountQueue, hsearch_word,s);
+        wordCountPair_t* localwcp = (wordCountPair_t*) search;
+        int and = strcmp(s, "and");
+        int or = strcmp(s, "or");
+        if (or ==0){
+            //printf("1\n");
+            globalRank+=andCount;
+            andCount =99999;
+        }else if (and==0){
+            //and = 1;
+            //continue;
+        }else if (search==NULL){
+            andCount=0;
+        }else{
+            if (localwcp->count<andCount){
+                andCount=localwcp->count;
+            }
+        }
+        //printf("%d\n",globalRank);
+        //printf("%d\n",andCount);
+        pos++;
+        qput(temp, s);  //put word back to the queue
+        s = qget(queryArrayCopy);
+    }
+    globalRank+=andCount;
+    // put word back
+    char *w = qget(temp);
+    while(w != NULL){
+        qput(queryArrayCopy, w);
+        w = qget(temp);
+    }
+    //free everthing
+    free(s);
+    qapply(temp,clean_query_array);
+    qclose(temp);
+    array_len = 0;
+
     localIdNode->rank = globalRank;
     globalRank = 0;
 }
@@ -262,7 +316,7 @@ void query_search_in_index(queue_t *queryQ, hashtable_t *h){
             globalWord = s; 
             qapply(page_queue,putId);               //get all the id
             qapply(page_queue,putWordCount);        //put value from index to idNode
-            qapply(rankQ,processRank);              //count the rank for each idNode
+            //qapply(rankQ,processRank);              //count the rank for each idNode
         }
         free(s);
         s = qget(queryQ);    //keep interating all the words in queryArray
@@ -277,6 +331,7 @@ int main(void){
     char delimiter[]=" \t\n"; 
     queue_t *queryArray;
     queryArray = qopen();
+    queryArrayCopy = qopen();
     int c;                                          //word count to clean input
     int invalid = 0;                                //label for invalid input format
     printf("> ");                                   //show ">" for input
@@ -288,6 +343,7 @@ int main(void){
             qapply(rankQ,clean_rankQ);
             qclose(rankQ);
             qclose(queryArray);
+            qclose(queryArrayCopy);
             happly(index_hash, removeWordAndQueue);
             hclose(index_hash);
             return 0;
@@ -303,8 +359,11 @@ int main(void){
 			    token[i] = tolower(token[i]);
 		    }
             char *s = malloc(sizeof(char)*(strlen(token) + 1));
+            char *scp = malloc(sizeof(char)*(strlen(token) + 1));
             strcpy(s, token);
+            strcpy(scp, token);
 		    qput(queryArray,s);
+            qput(queryArrayCopy,scp);
             token = strtok(NULL, " ");
 		}
         if(invalid != 1){
@@ -315,6 +374,7 @@ int main(void){
             }else{
                 printf("(query keyword): ");
                 qapply(queryArray,print_query_array);
+                
                 printf("\n\n");
 
                 //before passing queryArry to query_search_in_index
@@ -330,19 +390,21 @@ int main(void){
                 //update the final rank in rankQ for each ID
 
                 query_search_in_index(queryArray, index_hash);
+                qapply(rankQ,processRank);              //count the rank for each idNode
                 qapply(rankQ,print_rankQ);
                 qapply(rankQ,clean_rankQ);
                 qclose(rankQ);
             }
         }else{
-            
             qapply(rankQ,clean_rankQ);
             qclose(rankQ);
         }
         
         //clean the queryArray 
         clean_query_array(queryArray);
+        clean_query_array(queryArrayCopy);
         qclose(queryArray);
+        qclose(queryArrayCopy);
         while ((c = getchar()) != '\n');
         invalid = 0;
         memset(input, 0, MAXSIZE*sizeof(char));
@@ -351,7 +413,7 @@ int main(void){
         printf("\n> ");
    		scanf("%99[^\n]",input); 
         queryArray = qopen(); 
+        queryArrayCopy = qopen();
 	}
     return 0;
 }
-
