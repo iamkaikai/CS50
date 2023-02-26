@@ -27,8 +27,9 @@
 queue_t* rankQ;
 char* globalWord;
 int globalRank = 0;
-int array_len = 0;                                 //count the length of the queryArray
-char *pages_path = "../../module5/pages/";   //location of your index page
+int array_len = 0;                          //count the length of the queryArray
+char *pages_path, *indexFile;
+int quiet = 0;
 queue_t *queryArrayCopy;
 
 typedef struct idNode {   
@@ -84,12 +85,21 @@ void print_rankQ(void *p){
         printf("Rank = %d ",element->rank);
         printf("Page = %s :",element->id); 
         printf(" %s \n",element->url);
-        //qapply(element->wordCountQueue,print_innerQ);
     }
-    //printf("Rank = %d ",element->rank);
-   //printf("Page = %s :",element->id); 
-    //printf(" %s \n",element->url);
-    //qapply(element->wordCountQueue,print_innerQ); 
+}
+void save_rankQ(void *p){
+    // printf("saveQ\n");
+    idNode_t* element = (idNode_t*) p;
+    FILE *fp;
+    fp = fopen("./myqueries.txt", "a");
+    if(fp == NULL){
+        printf("unable to create file!!\n");
+    }else{
+        fprintf(fp, "Rank = %d ",element->rank);
+        fprintf(fp, "Page = %s :",element->id); 
+        fprintf(fp, " %s \n",element->url);
+    }
+    fclose(fp);
 }
 
 void clean_Q_in_rankQ(void* p){
@@ -286,7 +296,7 @@ bool formatScaner(queue_t *queryArray){
         }
         prev = cur;
         pos++;
-        qput(temp, s);  //put word back to the queue
+        qput(temp, s);          //put word back to the queue
         s = qget(queryArray);
     }
     // put word back
@@ -316,16 +326,34 @@ void query_search_in_index(queue_t *queryQ, hashtable_t *h){
             globalWord = s; 
             qapply(page_queue,putId);               //get all the id
             qapply(page_queue,putWordCount);        //put value from index to idNode
-            //qapply(rankQ,processRank);              //count the rank for each idNode
+            //qapply(rankQ,processRank);            //count the rank for each idNode
         }
         free(s);
-        s = qget(queryQ);    //keep interating all the words in queryArray
+        s = qget(queryQ);                           //keep interating all the words in queryArray
     }
 }
 
-int main(void){
-    hashtable_t *index_hash = hopen(999);           //hash for index
-    indexload(pages_path, "index",index_hash);     //load index
+int main(int argc, char *argv[]){
+
+    if(argc < 3){
+        printf("usage: -pageDirectory -indexFile [-q]\n");
+        exit(EXIT_FAILURE);
+    }else if(argc == 3){			               //normal usage
+        pages_path = argv[1];
+		indexFile = argv[2];
+    }else if(argc ==4 ){			               //-q mode
+        pages_path = argv[1];
+		indexFile = argv[2];
+        if(strcmp(argv[3], "-q") == 0){
+            quiet = 1;
+        }
+	}
+
+    hashtable_t *index_hash = hopen(999);          //hash for index
+    if(indexload(pages_path, indexFile, index_hash) == -1){
+        hclose(index_hash);
+        return -1;
+    }
     char input[MAXSIZE];
     char* token; 
     char delimiter[]=" \t\n"; 
@@ -374,24 +402,17 @@ int main(void){
             }else{
                 printf("(query keyword): ");
                 qapply(queryArray,print_query_array);
-                
                 printf("\n\n");
-
-                //before passing queryArry to query_search_in_index
-                //chop queryArray by "or" and pass them respectfully
-                //if no "or" just treat it the same as and-only query
-                //e.g. "A and B or C and D" -> [A,B], [C,D]
-                //e.g. "A or C and D" -> [A], [C,D]
-                //e.g. "A and B and C" -> [A,B,C]
-                //count the rank seperately with multiple queries
-                //modify the rankQ, allowing multiple ranks of a same page ID exist in the queue
-                //after finishing all the andGate ranking for a same page,
-                //qapply to add them up for "orGate" ranking 
-                //update the final rank in rankQ for each ID
-
                 query_search_in_index(queryArray, index_hash);
                 qapply(rankQ,processRank);              //count the rank for each idNode
-                qapply(rankQ,print_rankQ);
+                if(quiet == 1){
+                    remove("./myqueries.txt");
+                    qapply(rankQ,save_rankQ);
+                    printf("result of query saved!!\n");
+                }else{
+                    qapply(rankQ,print_rankQ);
+                }
+
                 qapply(rankQ,clean_rankQ);
                 qclose(rankQ);
             }
