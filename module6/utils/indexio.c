@@ -51,14 +51,15 @@ void indexsave(hashtable_t *master_hash, char *fileDir, char *fileName){
 	fclose(fp);
 }
 
-hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
+int indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
 	char file_location[256];
 	sprintf(file_location, "%s%s", fileDir, fileName);
 	char line[1024];
 	fp = fopen(file_location, "r");
 
 	if(fp == NULL){
-		printf("unable to create file!!\n");
+		printf("unable to locate index directory or index file!!\n");
+		return -1;
 	}else{
 		//read each line and create a wordCountPair
 		while(fgets(line, sizeof(line), fp)){
@@ -106,4 +107,5 @@ hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash){
         };
 	}
 	fclose(fp);	
+	return 0;
 }

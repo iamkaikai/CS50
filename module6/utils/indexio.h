@@ -33,4 +33,4 @@ typedef struct idCountPair {
 void indexsave(hashtable_t *hash, char *fileDir, char *fileName);
 
 /*load the index file from the destinated location "file_dir"*/
-hashtable_t indexload(char *fileDir, char *fileName, hashtable_t *master_hash);
+int indexload(char *fileDir, char *fileName, hashtable_t *master_hash);
