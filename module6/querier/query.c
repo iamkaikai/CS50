@@ -4,9 +4,9 @@
  * 
  * Author: YENKAI HUANG, HONGKE (LUIS) LU, ERIN
  * Created: Mon Feb 20 19:09:03 2023 (-0500)
- * Version: 
+ * Version: 1.0
  * 
- * Description: 
+ * Description: query for TSE
  * 
  */
 
@@ -44,7 +44,6 @@ void print_queue_element(void* p){
     char *current_id = qp->id;
 	int current_count = qp->count;
     if(current_id != NULL){
-		// printf("current_id = %s\n",current_id);
         printf("id = %s; count = %d\n", current_id, current_count);
     }else{
         printf("word error!\n");
@@ -88,7 +87,6 @@ void print_rankQ(void *p){
     }
 }
 void save_rankQ(void *p){
-    // printf("saveQ\n");
     idNode_t* element = (idNode_t*) p;
     FILE *fp;
     fp = fopen("./myqueries.txt", "a");
@@ -203,25 +201,20 @@ void orGate(void* p){
 //iterate through all the counts in certain page ID and sum them up
 void processRank(void* p){
     idNode_t* localIdNode = (idNode_t*) p;
-
-
     queue_t *temp = qopen();
     char *s = qget(queryArrayCopy);
     int pos = 0;
     int andCount =99999;
     while(s != NULL){
-        //printf("0\n");
         void *search = qsearch(localIdNode->wordCountQueue, hsearch_word,s);
         wordCountPair_t* localwcp = (wordCountPair_t*) search;
         int and = strcmp(s, "and");
         int or = strcmp(s, "or");
         if (or ==0){
-            //printf("1\n");
             globalRank+=andCount;
             andCount =99999;
         }else if (and==0){
-            //and = 1;
-            //continue;
+            break;
         }else if (search==NULL){
             andCount=0;
         }else{
@@ -229,8 +222,6 @@ void processRank(void* p){
                 andCount=localwcp->count;
             }
         }
-        //printf("%d\n",globalRank);
-        //printf("%d\n",andCount);
         pos++;
         qput(temp, s);  //put word back to the queue
         s = qget(queryArrayCopy);
