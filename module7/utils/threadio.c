@@ -9,6 +9,7 @@
  * 
  */
 #include <queue.h>
+#include <hash.h>
 #include <pthread.h>
 /* the queue representation is hidden from users of the module */
 typedef struct lqueue{
@@ -83,6 +84,71 @@ void* lqremove(lqueue_t *qp,
 	pthread_mutex_lock(&(qp->m));
 	qremove(qp->queue,searchfn,skeyp);
 	pthread_mutex_unlock(&(qp->m));
+}
+
+/* representation of a hashtable hidden */
+typedef struct lhashtable{
+	hashtable_t* hash;
+	pthread_mutex_t m;
+}lhashtable_t;	
+
+/* hopen -- opens a hash table with initial size hsize */
+lhashtable_t *lhopen(uint32_t hsize){
+	queue_t* hash = hopen(hsize);
+    lhashtable_t* localHash = malloc(sizeof(lhashtable_t));
+	pthread_mutex_t hashM;
+	pthread_mutex_init(&hashM,NULL);
+	localHash->hash=hash;
+	localHash->m=hashM;
+}
+
+/* hclose -- closes a hash table */
+void lhclose(lhashtable_t *htp){
+	qclose(htp->hash);
+	pthread_mutex_destroy(&(htp->m));
+	free(htp);
+}
+
+/* hput -- puts an entry into a hash table under designated key 
+ * returns 0 for success; non-zero otherwise
+ */
+int32_t lhput(lhashtable_t *htp, void *ep, const char *key, int keylen){
+	pthread_mutex_lock(&(htp->m));
+	hput(htp->hash,ep,key,keylen);
+	pthread_mutex_unlock(&(htp->m));
+}
+
+/* happly -- applies a function to every entry in hash table */
+void lhapply(lhashtable_t *htp, void (*fn)(void* ep)){
+	pthread_mutex_lock(&(htp->m));
+	happly(htp->hash,fn);
+	pthread_mutex_unlock(&(htp->m));
+}
+
+/* hsearch -- searchs for an entry under a designated key using a
+ * designated search fn -- returns a pointer to the entry or NULL if
+ * not found
+ */
+void *lhsearch(lhashtable_t *htp, 
+	      bool (*searchfn)(void* elementp, const void* searchkeyp), 
+	      const char *key, 
+	      int32_t keylen){
+	pthread_mutex_lock(&(htp->m));
+	hsearch(htp->hash,searchfn,key,keylen);
+	pthread_mutex_unlock(&(htp->m));
+}
+
+/* hremove -- removes and returns an entry under a designated key
+ * using a designated search fn -- returns a pointer to the entry or
+ * NULL if not found
+ */
+void *lhremove(lhashtable_t *htp, 
+	      bool (*searchfn)(void* elementp, const void* searchkeyp), 
+	      const char *key, 
+	      int32_t keylen){
+	pthread_mutex_lock(&(htp->m));
+	lhremove(htp->hash,searchfn,key,keylen);
+	pthread_mutex_unlock(&(htp->m));
 }
 
 
