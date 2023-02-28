@@ -54,8 +54,4 @@ void* lqremove(lqueue_t *qp,
 				bool (*searchfn)(void* elementp,const void* keyp),
 				const void* skeyp);
 
-/* concatenatenates elements of q2 into q1
- * q2 is dealocated, closed, and unusable upon completion 
- */
-void lqconcat(lqueue_t *q1p, lqueue_t *q2p);
 
