@@ -8,6 +8,7 @@
  * Description: 
  * 
  */
+#include <stdlib.h>
 #include <queue.h>
 #include <hash.h>
 #include <pthread.h>
@@ -25,12 +26,14 @@ lqueue_t* lqopen(void){
 	pthread_mutex_init(&queueM,NULL);
 	localQueue->queue=queue;
 	localQueue->m=queueM;
+	return localQueue;
 }        
 
 /* deallocate a queue, frees everything in it */
 void lqclose(lqueue_t *qp){
 	qclose(qp->queue);
-	pthread_mutex_destroy(&(qp->m));
+	pthread_mutex_t queueM = qp->m;
+	pthread_mutex_destroy(&queueM);
 	free(qp);
 }
 
@@ -39,15 +42,17 @@ void lqclose(lqueue_t *qp){
  */
 int32_t lqput(lqueue_t *qp, void *elementp){
 	pthread_mutex_lock(&(qp->m));
-	qput(qp->queue,elementp);
+	int32_t a = qput(qp->queue,elementp);
 	pthread_mutex_unlock(&(qp->m));
+	return a;
 }
 
 /* get the first first element from queue, removing it from the queue */
 void* lqget(lqueue_t *qp){
 	pthread_mutex_lock(&(qp->m));
-	qget(qp->queue);
+	void* localElement = qget(qp->queue);
 	pthread_mutex_unlock(&(qp->m));
+	return localElement;
 }
 
 /* apply a function to every element of the queue */
@@ -70,8 +75,9 @@ void* lqsearch(lqueue_t *qp,
 				bool (*searchfn)(void* elementp,const void* keyp),
 				const void* skeyp){
 	pthread_mutex_lock(&(qp->m));
-	qsearch(qp->queue,searchfn,skeyp);
+	void* localElement = qsearch(qp->queue,searchfn,skeyp);
 	pthread_mutex_unlock(&(qp->m));
+	return localElement;
 }
 
 /* search a queue using a supplied boolean function (as in qsearch),
@@ -82,8 +88,9 @@ void* lqremove(lqueue_t *qp,
 				bool (*searchfn)(void* elementp,const void* keyp),
 				const void* skeyp){
 	pthread_mutex_lock(&(qp->m));
-	qremove(qp->queue,searchfn,skeyp);
+	void* localElement = qremove(qp->queue,searchfn,skeyp);
 	pthread_mutex_unlock(&(qp->m));
+	return localElement;
 }
 
 /* representation of a hashtable hidden */
@@ -100,6 +107,7 @@ lhashtable_t *lhopen(uint32_t hsize){
 	pthread_mutex_init(&hashM,NULL);
 	localHash->hash=hash;
 	localHash->m=hashM;
+	return localHash;
 }
 
 /* hclose -- closes a hash table */
@@ -114,8 +122,9 @@ void lhclose(lhashtable_t *htp){
  */
 int32_t lhput(lhashtable_t *htp, void *ep, const char *key, int keylen){
 	pthread_mutex_lock(&(htp->m));
-	hput(htp->hash,ep,key,keylen);
+	int32_t a=hput(htp->hash,ep,key,keylen);
 	pthread_mutex_unlock(&(htp->m));
+	return a;
 }
 
 /* happly -- applies a function to every entry in hash table */
@@ -134,8 +143,9 @@ void *lhsearch(lhashtable_t *htp,
 	      const char *key, 
 	      int32_t keylen){
 	pthread_mutex_lock(&(htp->m));
-	hsearch(htp->hash,searchfn,key,keylen);
+	void* localElement = hsearch(htp->hash,searchfn,key,keylen);
 	pthread_mutex_unlock(&(htp->m));
+	return localElement;
 }
 
 /* hremove -- removes and returns an entry under a designated key
@@ -147,8 +157,9 @@ void *lhremove(lhashtable_t *htp,
 	      const char *key, 
 	      int32_t keylen){
 	pthread_mutex_lock(&(htp->m));
-	lhremove(htp->hash,searchfn,key,keylen);
+	void* localElement=lhremove(htp->hash,searchfn,key,keylen);
 	pthread_mutex_unlock(&(htp->m));
+	return localElement;
 }
 
 
