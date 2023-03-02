@@ -101,7 +101,7 @@ typedef struct lhashtable{
 
 /* hopen -- opens a hash table with initial size hsize */
 lhashtable_t *lhopen(uint32_t hsize){
-	queue_t* hash = hopen(hsize);
+	hashtable_t* hash = hopen(hsize);
     lhashtable_t* localHash = malloc(sizeof(lhashtable_t));
 	pthread_mutex_t hashM;
 	pthread_mutex_init(&hashM,NULL);
@@ -112,7 +112,7 @@ lhashtable_t *lhopen(uint32_t hsize){
 
 /* hclose -- closes a hash table */
 void lhclose(lhashtable_t *htp){
-	qclose(htp->hash);
+	hclose(htp->hash);
 	pthread_mutex_destroy(&(htp->m));
 	free(htp);
 }
@@ -157,7 +157,7 @@ void *lhremove(lhashtable_t *htp,
 	      const char *key, 
 	      int32_t keylen){
 	pthread_mutex_lock(&(htp->m));
-	void* localElement=lhremove(htp->hash,searchfn,key,keylen);
+	void* localElement=hremove(htp->hash,searchfn,key,keylen);
 	pthread_mutex_unlock(&(htp->m));
 	return localElement;
 }
