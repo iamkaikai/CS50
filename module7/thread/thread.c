@@ -1,13 +1,12 @@
-/* thread.c --- 
- * 
- * 
- * Author: YENKAI HUANG, HONGKE (LUIS) LU, ERIN
- * Created: Tue Feb 28 12:03:13 2023 (-0500)
- * Version: 1.0
- * 
- * Description: 
- * 
- */
+/* crawler.c --- 1;95;0c * 
+* 
+* Author: YENKAI HUANG, HONGKE (LUIS) LU, ERIN
+* Created: Fri Feb     3 22:15:27 2023 (-0500)
+* Version: 1.0
+* 
+* Description: tiny search engine in module 4, grounp 2 in W23 CS50 
+* 
+*/
 
 # include <stdio.h>
 # include <stdlib.h>         
@@ -17,160 +16,220 @@
 # include <queue.h>
 # include <hash.h>
 # include <pageio.h>
-# include <ctype.h>
-# include <indexio.h>
-# include <dirent.h>
 # include <threadio.h>
 # include <pthread.h>
 
-//define constructor
-#define MAXREG 10     
-typedef struct car {
-  struct car *next;
-  char plate[MAXREG];
-  double price;
-  int year;
-} car_t;
+lhashtable_t *url_hash;
+lqueue_t *url_queue;
 
-void print_car_plate(void* elementp){
-	car_t *car = (car_t*)elementp;
-  printf("car plate = %s\n", car->plate);                                    
-}  
+int counter = 1;
+char *dirname;
+int max_depth;
 
-car_t *make_car(char *plateP, double price, int year){
-	car_t *car;
-  if( !(car = (car_t*)malloc(sizeof(car_t))) ){
-		printf("Error:malloc failed allocating car!!!!\n");
-		return NULL;
-	}
-	car -> next = NULL;
-  strcpy(car->plate, plateP);
-  car -> price = price;
-  car -> year = year;
-	return car;
-}
-bool lqsearch_fn(void* elementp,const void *skeyp){
-    car_t *car = (car_t*)elementp;
-    char* p = (char*) skeyp;
-    return strcmp(car->plate,p)==0;
+
+typedef struct lcount{
+    int counter;
+    pthread_mutex_t m;
+}lcount_t;
+
+lcount_t* createCount(){
+    lcount_t* localcount = malloc(sizeof(lcount_t));
+    pthread_mutex_t counterM;
+	pthread_mutex_init(&counterM,NULL);
+    localcount->counter = 1;
+    localcount->m=counterM;
+    return localcount;
 }
 
-lqueue_t *lqueue;
-lhashtable_t *lhash;
-int count1 = 0;
-int count2 = 0;
+lcount_t *count;
 
-void *mainq1(void *p){
-    car_t *car1 = make_car("ABCD1234", 1000, 2023);
-    car_t *car2 = make_car("ABCD1235", 2000, 2021);
-    lqput(lqueue, car1);
-	lqput(lqueue, car2);
-    printf("test for lsearch\n");
-    car_t *car = lqsearch(lqueue,lqsearch_fn,"ABCD1234");
-    print_car_plate(car);
-    printf("\n");
-    pthread_exit(NULL);
-
+void countAdd(lcount_t* count){
+    pthread_mutex_lock(&(count->m));
+    count->counter = count->counter+1;
+	pthread_mutex_unlock(&(count->m));
 }
 
-void *mainq2(void *p){
-    car_t *car3 = make_car("ABCD1236", 3000, 2020);
-    car_t *car4 = make_car("ABCD1237", 4000, 2030);
-    lqput(lqueue, car3);
-	lqput(lqueue, car4);
-    printf("test for lqget \n");
-    car_t *car = lqget(lqueue);
-    print_car_plate(car);
-    free(car);
-    printf("\n");
-    pthread_exit(NULL);
+void countMinus(lcount_t* count){
+    pthread_mutex_lock(&(count->m));
+    count->counter = count->counter-1;
+	pthread_mutex_unlock(&(count->m));
 }
 
-void *mainh1(void *p){
-    car_t *car1 = make_car("ABCD1234", 1000, 2023);
-    car_t *car2 = make_car("ABCD1235", 2000, 2021);
-    lhput(lhash, car1,"ABCD1234",8);
-	lhput(lhash, car2,"ABCD1235",8);
-    printf("test for lsearch\n");
-    car_t *car = lhsearch(lhash,lqsearch_fn,"ABCD1234",8);
-    print_car_plate(car);
-    printf("\n");
-    pthread_exit(NULL);
+void destoryCount(lcount_t* count){
+	pthread_mutex_t m = count->m;
+	pthread_mutex_destroy(&m);
+	free(count);
 }
 
-void *mainh2(void *p){
-    car_t *car3 = make_car("ABCD1236", 3000, 2020);
-    car_t *car4 = make_car("ABCD1237", 4000, 2030);
-    lhput(lhash, car3,"ABCD1236",8);
-	lhput(lhash, car4,"ABCD1237",8);
-    //lhapply(lhash, print_car_plate);
-    printf("test for lhremove \n");
-    car_t *car = lhremove(lhash,lqsearch_fn,"ABCD1236",8);
-    print_car_plate(car);
-    free(car);
-    printf("\n");
-    pthread_exit(NULL);
-}
 
-int test1(void){
-
-    pthread_t tid1, tid2;
-    lqueue = lqopen();
-    if(pthread_create(&tid1, NULL, mainq1, NULL)!=0){
-        printf("Failed to create thread 1\n");
-        exit(EXIT_FAILURE);                                                           
+void print_element(void *p){
+    if(p == NULL){
+            printf("p is Null\n");
     }
-    if(pthread_create(&tid2, NULL, mainq2, NULL)!=0){
-        printf("Failed to create thread 2\n");
-        exit(EXIT_FAILURE);                                                           
-    }    
+    webpage_t *qp = (webpage_t *) p;
+    char *url = webpage_getURL(qp);
+    if(url != NULL){
+            printf("%p; URL = %s\n",p , url);
+    }else if(url == NULL){
+            printf("queue is empty\n");
+    }else{
+            printf("queue error!\n");
+    }
+}
+
+bool hsearch_url(void *elementp, const void* searchkeyp){
+    char *ep = (char *)elementp;
+    char *skp = (char *)searchkeyp;
+    return strcmp(ep, skp) == 0;
+}
+
+bool qsearch_url(void *elementp,const void* keyp){
+    char *ep = webpage_getURL((webpage_t *)elementp);
+    // printf("%s\n",ep);
+    char *skp = webpage_getURL((webpage_t *)keyp);
+    return strcmp(ep, skp) == 0;
+}
+
+bool url_search_and_hput(webpage_t *page, hashtable_t *hash){
+    char *url = webpage_getURL(page);
+    char *h_url = malloc(strlen(url) + 1);
+    strcpy(h_url, url);
+    int h_url_len = strlen(h_url);
+    bool result;
+    if(lhsearch(hash, hsearch_url, h_url, h_url_len) == NULL){
+        lhput(hash, h_url, h_url, h_url_len);
+        result = false;
+    }else{
+        result = true;
+    }
+    return result;
+}
+
+int get_url(webpage_t *cur_page, int max, lqueue_t *url_queue, lhashtable_t *hash, int counter, char *dirname){
+    //get all the urls in the same layer
+    int pos = 0;
+    char *result;      //store urls crawled in current page
+    int cur_depth = webpage_getDepth(cur_page);
+    int next_depth = cur_depth+1;
+    void (*fn1)(queue_t *) = print_element;
+    bool (*fn2)(void *elementp, const void* searchkeyp) = qsearch_url;
+    bool (*fn3)(void *elementp, const void* searchkeyp) = hsearch_url;
+    bool fetch = webpage_fetch(cur_page);
+
+    if(fetch){
+        printf("\ncurrent url = %s\n", webpage_getURL(cur_page));
+        url_search_and_hput(cur_page, hash);
+        pagesave(cur_page, counter, dirname);
+        printf("%p; file %d: %s saved!!!!!\n\n", (void*)cur_page, counter, webpage_getURL(cur_page));
+
+        while((pos = webpage_getNextURL(cur_page, pos, &result)) > 0 ){          
+            // printf("get NextURL\n");
+            char *new_url = malloc(strlen(result)+1);
+            strcpy(new_url, result);
+            webpage_t *new_page = webpage_new(new_url, next_depth, NULL);
+            if(IsInternalURL(result) && next_depth <= max){
+                //new_page = webpage_new(result, next_depth, NULL);
+                if( lqsearch(url_queue, fn2, new_page) == false && \
+                    lhsearch(hash, fn3, result, strlen(result)) == false)
+                {
+                    lqput(url_queue, new_page);
+                }else{
+					webpage_delete(new_page);
+				}
+            }else{
+                    webpage_delete(new_page);
+            }
+
+            free(result);
+            free(new_url);
+        }
+    }else{
+        countMinus(count);
+        //counter -=1;
+    }
         
-    if(pthread_join(tid1,NULL)!=0){
-        printf("Failed to join thread 1\n");
-        exit(EXIT_FAILURE);                         
-    }
-    if(pthread_join(tid2,NULL)!=0){
-        printf("Failed to join thread 2\n");
-        exit(EXIT_FAILURE);                         
-    }
-    printf("queue: ");
-    lqapply(lqueue, print_car_plate);
-    printf("\n");
-    lqclose(lqueue);
-    return 0;
+    printf("---------- Queue of URLs ------------\n");
+    lqapply(url_queue, fn1);
+    printf("-------------------------------------\n\n");
+
+    webpage_delete(cur_page);
+    return cur_depth;
 }
 
-int test2(void){
-
-    pthread_t tid1, tid2;
-    lhash = lhopen(20);
-    if(pthread_create(&tid1, NULL, mainh1, NULL)!=0){
-        printf("Failed to create thread 1\n");
-        exit(EXIT_FAILURE);                                                           
-    }
-    if(pthread_create(&tid2, NULL, mainh2, NULL)!=0){
-        printf("Failed to create thread 2\n");
-        exit(EXIT_FAILURE);                                                           
-    }    
-        
-    if(pthread_join(tid1,NULL)!=0){
-        printf("Failed to join thread 1\n");
-        exit(EXIT_FAILURE);                         
-    }
-    if(pthread_join(tid2,NULL)!=0){
-        printf("Failed to join thread 2\n");
-        exit(EXIT_FAILURE);                         
-    }
-    printf("lhash: ");
-    lhapply(lhash, print_car_plate);
-    printf("\n");
-    lhclose(lhash);
-    return 0;
+void* thread(void *p){
+    //iterate through all the pages in the queue until it's empty
+        void *qp = lqget(url_queue);
+        printf("thread created\n");
+        while(qp != NULL){
+            get_url(qp, max_depth, url_queue, url_hash, count->counter, dirname);
+            qp = lqget(url_queue);
+            countAdd(count);
+            //counter +=1;
+            if(qp == NULL){
+                printf("queue is empty!!!\n\n");
+            }
+        }
+    pthread_exit(NULL);
 }
 
-int main(void){
-    //test for lqueue
-    //return test1();
-    //test for lhash
-    return test2();
+int main(int argc, char *argv[]){
+        if(argc < 5){
+            printf("usage: -seedurl -pagedir -maxdepth -numpthread\n");
+            exit(EXIT_FAILURE);
+        }else if(argc == 6){
+            argv[1] = argv[2];
+            argv[2] = argv[3];
+            argv[3] = argv[4];
+            argv[4] = argv[5];
+					
+        }
+        char *seed = argv[1];
+        max_depth = atoi(argv[3]);
+        // int crawl_depth = 0;
+        uint32_t hsize = 999;
+        url_hash = lhopen(hsize);
+        url_queue = lqopen();
+        count = createCount();
+
+        dirname = argv[2];
+        int NUM_THREADS = atoi(argv[4]);
+        //initiate the seed page
+        webpage_t *seed_page = webpage_new(seed, 0, NULL);                     
+        lqput(url_queue, seed_page);
+
+        pthread_t threads[NUM_THREADS];
+        int thread_args[NUM_THREADS];
+        int i;
+
+        // Create threads
+        for (i = 0; i < NUM_THREADS; i++) {
+            thread_args[i] = i;
+            if (pthread_create(&threads[i], NULL, thread, &thread_args[i]) != 0) {
+                fprintf(stderr, "Error creating thread %d\n", i);
+               return 1;
+            }
+        }
+
+        // Wait for threads to finish
+        for (i = 0; i < NUM_THREADS; i++) {
+            pthread_join(threads[i], NULL);
+        }
+
+        printf("Threads finished.\n");
+
+
+        // //iterate through all the pages in the queue until it's empty
+        // void *qp = lqget(url_queue);
+        // while(qp != NULL){
+        //     get_url(qp, max_depth, url_queue, url_hash, counter, dirname);
+        //     qp = lqget(url_queue);
+        //     counter +=1;
+        //     if(qp == NULL){
+        //         printf("queue is empty!!!\n\n");
+        //     }
+        // }
+        lqclose(url_queue);
+        lhclose(url_hash);
+        destoryCount(count);
+        exit(EXIT_SUCCESS);
 }
