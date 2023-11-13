@@ -18,6 +18,7 @@
 # include <pageio.h>
 # include <threadio.h>
 # include <pthread.h>
+# include <time.h>
 
 lhashtable_t *url_hash;
 lqueue_t *url_queue;
@@ -173,63 +174,60 @@ void* thread(void *p){
 }
 
 int main(int argc, char *argv[]){
-        if(argc < 5){
-            printf("usage: -seedurl -pagedir -maxdepth -numpthread\n");
-            exit(EXIT_FAILURE);
-        }else if(argc == 6){
-            argv[1] = argv[2];
-            argv[2] = argv[3];
-            argv[3] = argv[4];
-            argv[4] = argv[5];
-					
+    clock_t start_t, end_t;
+    double total_t;
+    start_t = clock();
+    if(argc < 5){
+        printf("usage: -seedurl -pagedir -maxdepth -numpthread\n");
+        exit(EXIT_FAILURE);
+    }else if(argc == 6){
+        argv[1] = argv[2];
+        argv[2] = argv[3];
+        argv[3] = argv[4];
+        argv[4] = argv[5];
+                
+    }
+    char *seed = argv[1];
+    max_depth = atoi(argv[3]);
+    // int crawl_depth = 0;
+    uint32_t hsize = 999;
+    url_hash = lhopen(hsize);
+    url_queue = lqopen();
+    count = createCount();
+
+    dirname = argv[2];
+    int NUM_THREADS = atoi(argv[4]);
+    //initiate the seed page
+    webpage_t *seed_page = webpage_new(seed, 0, NULL);                     
+    lqput(url_queue, seed_page);
+
+    pthread_t threads[NUM_THREADS];
+    int thread_args[NUM_THREADS];
+    int i;
+
+    // Create threads
+    for (i = 0; i < NUM_THREADS; i++) {
+        thread_args[i] = i;
+        if (pthread_create(&threads[i], NULL, thread, &thread_args[i]) != 0) {
+            fprintf(stderr, "Error creating thread %d\n", i);
+            return 1;
         }
-        char *seed = argv[1];
-        max_depth = atoi(argv[3]);
-        // int crawl_depth = 0;
-        uint32_t hsize = 999;
-        url_hash = lhopen(hsize);
-        url_queue = lqopen();
-        count = createCount();
+    }
 
-        dirname = argv[2];
-        int NUM_THREADS = atoi(argv[4]);
-        //initiate the seed page
-        webpage_t *seed_page = webpage_new(seed, 0, NULL);                     
-        lqput(url_queue, seed_page);
+    // Wait for threads to finish
+    for (i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
 
-        pthread_t threads[NUM_THREADS];
-        int thread_args[NUM_THREADS];
-        int i;
-
-        // Create threads
-        for (i = 0; i < NUM_THREADS; i++) {
-            thread_args[i] = i;
-            if (pthread_create(&threads[i], NULL, thread, &thread_args[i]) != 0) {
-                fprintf(stderr, "Error creating thread %d\n", i);
-               return 1;
-            }
-        }
-
-        // Wait for threads to finish
-        for (i = 0; i < NUM_THREADS; i++) {
-            pthread_join(threads[i], NULL);
-        }
-
-        printf("Threads finished.\n");
+    printf("Threads finished.\n");
 
 
-        // //iterate through all the pages in the queue until it's empty
-        // void *qp = lqget(url_queue);
-        // while(qp != NULL){
-        //     get_url(qp, max_depth, url_queue, url_hash, counter, dirname);
-        //     qp = lqget(url_queue);
-        //     counter +=1;
-        //     if(qp == NULL){
-        //         printf("queue is empty!!!\n\n");
-        //     }
-        // }
-        lqclose(url_queue);
-        lhclose(url_hash);
-        destoryCount(count);
-        exit(EXIT_SUCCESS);
+    lqclose(url_queue);
+    lhclose(url_hash);
+    destoryCount(count);
+
+    end_t = clock();
+    total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+    printf("Total time taken by CPU: %f\n", total_t  );
+    exit(EXIT_SUCCESS);
 }
